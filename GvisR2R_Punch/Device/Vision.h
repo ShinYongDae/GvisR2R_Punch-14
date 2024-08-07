@@ -166,7 +166,7 @@ public:
 	void SelDispAlign(HWND hDispCtrl, CRect rtDispCtrl, int nDisplayFitMode);
 
 	void SetOvrCadFontSz(int nIdxMkInfo);
-	void InitCADBuf(int nLayer);
+	void InitCADBuf();
 	void InitDispDef();
 	void ClrDispCad();
 	void ClrDispDef();

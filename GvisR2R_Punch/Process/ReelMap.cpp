@@ -492,9 +492,9 @@ BOOL CReelMap::Write(int nSerial)
 		pDoc->SetItsSerialInfo(nSerial);
 
 	int nIdx = pDoc->GetPcrIdx1(nSerial, pDoc->m_bNewLotShare[1]);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
-	int nStripY = pDoc->m_Master[0].m_pPcsRgn->nRow / 4; // Strip(1~4);
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
 	int nTotDefPcs = 0;
 
 	if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
@@ -551,7 +551,8 @@ BOOL CReelMap::Write(int nSerial)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
-					switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					//switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
 						nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
@@ -597,7 +598,7 @@ BOOL CReelMap::Write(int nSerial)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
-					switch (pDoc->m_MasterInner[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
 						nPcsId = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
@@ -641,7 +642,7 @@ BOOL CReelMap::Write(int nSerial)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
-					switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
 						nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
@@ -903,7 +904,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 		}
 	}
 
-	if(!pDoc->m_Master[0].m_pPcsRgn)
+	if(!pView->m_mgrReelmap->m_pPcsRgn)
 	{
 		pView->MsgBox(_T("PCS RGN Error."));
 		return FALSE;
@@ -963,8 +964,8 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 	int k, i, nR, nC, nP, nInc=0;
 	//int nCol, nRow;
 	int nLoadPnl, nDefCode;
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol; // 10
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow; // 5
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol; // 10
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow; // 5
 	int nActionCode;
 
 	for(k=nTotPnl-1; k>=0; k--) // k = 7 ~ 0
@@ -1145,15 +1146,18 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 						{
 							if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 							{
-								nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+								nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+								//nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
 							}
 							else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 							{
-								nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
+								nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
+								//nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
 							}
 							else if (m_nLayer == RMAP_ITS)
 							{
-								nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+								nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+								//nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
 							}
 
 							//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1202,15 +1206,15 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 							{								
 								if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 								{
-									nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+									nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 								}
 								else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 								{
-									nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
+									nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
 								}
 								else if (m_nLayer == RMAP_ITS)
 								{
-									nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+									nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 								}
 
 								//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1277,15 +1281,15 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 									{
 										if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 										{
-											nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+											nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 										}
 										else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 										{
-											nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
+											nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
 										}
 										else if (m_nLayer == RMAP_ITS)
 										{
-											nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+											nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 										}
 
 										//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1331,11 +1335,11 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 								{
 									if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 									{
-										nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+										nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 									}
 									else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 									{
-										nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
+										nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
 
 										// 내층 릴맵 Display 좌우반전 시킴....
 										if(nActionCode == 0)
@@ -1349,7 +1353,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 									}
 									else if (m_nLayer == RMAP_ITS)
 									{
-										nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
+										nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
 									}
 
 									//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1951,8 +1955,10 @@ int CReelMap::GetLastSerial()
 
 void CReelMap::SetFixPcs(int nSerial)
 {
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	//int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
+	//int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
 	int nR, nC, nDefCode;
 
 	for(nR=0; nR<nNodeY; nR++)
@@ -2017,8 +2023,8 @@ void CReelMap::ClrFixPcs(int nCol, int nRow)
 BOOL CReelMap::IsFixPcs(int nSerial, int &Col, int &Row)
 {
 	BOOL bRtn = FALSE;
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 
 	BOOL bOn = pDoc->WorkingInfo.LastJob.bContFixDef;
 	int nRange = _tstoi(pDoc->WorkingInfo.LastJob.sNumRangeFixDef);
@@ -2080,8 +2086,8 @@ BOOL CReelMap::IsFixPcs(int nSerial, int &Col, int &Row)
 BOOL CReelMap::IsFixPcs(int nSerial, int* pCol, int* pRow, int &nTot, BOOL &bCont) // nTot : total of PCS Over nJudge
 {
 	BOOL bRtn = FALSE;
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 
 	BOOL bOn = pDoc->WorkingInfo.LastJob.bContFixDef;
 	int nRange = _tstoi(pDoc->WorkingInfo.LastJob.sNumRangeFixDef);
@@ -3137,8 +3143,8 @@ BOOL CReelMap::GetNodeXYonRmap(int &nNodeX, int &nNodeY, CString sPath)
 
 	if (!nNodeX || !nNodeY)
 	{
-		nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol; // on Cam
-		nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow; // on Cam
+		nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol; // on Cam
+		nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow; // on Cam
 	}
 
 	return TRUE;
@@ -3436,8 +3442,8 @@ BOOL CReelMap::ReloadReelmap(int nTo)
 	TCHAR sep[] = { _T(",/;\r\n\t") };
 	TCHAR szData[MAX_PATH];
 
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 	int nTotPcs = nNodeX * nNodeY;
 	int nStripPcs = nTotPcs / 4;
 
@@ -3830,8 +3836,8 @@ BOOL CReelMap::WriteYield(int nSerial, CString sPath)
 	int dwStart = GetTickCount();
 	int nNodeX = 0, nNodeY = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 #endif
 	CString sDefNum, strData;
 	int nPnl, nRow, nCol, nDefCode, nStrip;
@@ -4103,8 +4109,8 @@ BOOL CReelMap::MakeHeader(CString sPath)
 	char* pRtn = NULL;
 	int nNodeX = 0, nNodeY = 0, i = 0, k = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 #endif
 
 	fprintf(fp, "[Info]\n");
@@ -4246,8 +4252,8 @@ BOOL CReelMap::MakeItsReelmapHeader()
 	char* pRtn = NULL;
 	int nNodeX = 0, nNodeY = 0, i = 0, k = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
 #endif
 
 	fprintf(fp, "[Info]\n");
@@ -4345,9 +4351,10 @@ BOOL CReelMap::WriteIts(int nItsSerial)
 	}
 
 	int nIdx = pDoc->GetPcrIdx0(nItsSerial);
-	int nNodeX = pDoc->m_MasterInner[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow;
-	int nStripY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;//int nNodeX = pDoc->m_MasterInner[0].m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;//int nNodeY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow;
+	//int nStripY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
+	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
 	int nTotDefPcs = 0;
 	if (pDoc->m_pPcrIts)
 	{
@@ -4374,7 +4381,8 @@ BOOL CReelMap::WriteIts(int nItsSerial)
 		{
 			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 			{
-				switch (pDoc->m_MasterInner[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+				//switch (pDoc->m_MasterInner[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+				switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 				{
 				case 0:
 					nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
@@ -4530,9 +4538,9 @@ CString CReelMap::GetItsFileData(int nSerial, int nLayer) // RMAP_UP, RMAP_DN, R
 	CString str = _T(""), sSide = _T(""), sTemp = _T(""), sItsData = _T("");
 	CString sItsCode = pDoc->WorkingInfo.LastJob.sEngItsCode;
 
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
-	int nStripY = pDoc->m_Master[0].m_pPcsRgn->nRow / 4; // Strip(1~4);
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
 	int nIdx = pDoc->GetPcrIdx0(nSerial);
 
 	int nTotDefPcs = 0;
@@ -6172,9 +6180,9 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 	MakeHeader(sPath);
 
 	int nIdx = pDoc->GetPcrIdx1(nSerial, pDoc->m_bNewLotShare[1]);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
-	int nStripY = pDoc->m_Master[0].m_pPcsRgn->nRow / MAX_STRIP; // Strip(1~4);
+	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / MAX_STRIP; // Strip(1~4);
 	int nTotDefPcs = 0;
 
 	if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
@@ -6231,7 +6239,7 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 		{
 			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 			{
-				switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+				switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 				{
 				case 0:
 					nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];

@@ -5892,38 +5892,19 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[0][nIdx]->m_sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	{
-		// Lot
-		nTemp = strFileData.Find(',', 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[0][nIdx]->m_sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find('\n', 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
-	}
-	//else
-	//{
-	//	 Lot
-	//	nTemp = strFileData.Find(',', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[0][nIdx]->m_sLot = strLot;
-	//
-	//	 Lot
-	//	nTemp = strFileData.Find('\n', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[0][nIdx]->m_sLot = strLot;
-	//}
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
 
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
@@ -6036,7 +6017,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 		WorkingInfo.CurrModel.sLot = WorkingInfo.NextModel.sLot;
 		WorkingInfo.CurrModel.sLayerUp = WorkingInfo.NextModel.sLayerUp;
 
-		pView->ResetMkInfo(0); // CAD 데이터 리로딩   0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+		pView->ResetMkInfo(); // CAD 데이터 리로딩
 		WriteChangedModel();
 
 		if (pView->m_pDlgMenu01)
@@ -6141,7 +6122,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 			nFileSize = nFileSize - nTemp - 1;
 			m_pPcr[0][nIdx]->m_pDefType[i] = _tstoi(strBadName);
 
-			pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
+			pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
 			m_pPcr[0][nIdx]->m_arDefType[nR][nC] = m_pPcr[0][nIdx]->m_pDefType[i];
 			m_pPcr[0][nIdx]->m_arPcrLineNum[nR][nC] = i;
 
@@ -6426,7 +6407,7 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 		//WorkingInfo.CurrModel.sLayerUp = WorkingInfo.NextModel.sLayerUp;
 		WorkingInfo.CurrModel.sLayerDn = WorkingInfo.NextModel.sLayerDn;
 
-		pView->ResetMkInfo(1); // CAD 데이터 리로딩   0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+		pView->ResetMkInfo(); // CAD 데이터 리로딩
 		WriteChangedModel();
 
 		if (pView->m_pDlgMenu01)
@@ -6528,7 +6509,7 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 			m_pPcr[1][nIdx]->m_pDefType[i] = _tstoi(strBadName);
 
 			// Temp for ITS - m_pPcr[0][nIdx]->m_pDefPcs[i] = Rotate180(_tstoi(strPieceID));
-			pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(Rotate180(m_pPcr[1][nIdx]->m_pDefPcs[i]), nC, nR);
+			pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(Rotate180(m_pPcr[1][nIdx]->m_pDefPcs[i]), nC, nR);
 			m_pPcr[1][nIdx]->m_arDefType[nR][nC] = m_pPcr[1][nIdx]->m_pDefType[i];
 			m_pPcr[1][nIdx]->m_arPcrLineNum[nR][nC] = i;
 
@@ -6860,8 +6841,8 @@ BOOL CGvisR2R_PunchDoc::CopyDefImgUp(int nSerial, CString sNewLot)
 			int nPcrIdx = pDoc->GetPcrIdx0(nSerial);
 			int nPcsIdx = pDoc->m_pPcr[0][nPcrIdx]->m_pDefPcs[i];
 			int nDefCode = pDoc->m_pPcr[0][nPcrIdx]->m_pDefType[i];
-			if (pDoc->m_Master[0].m_pPcsRgn)
-				pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+			if (pView->m_mgrReelmap->m_pPcsRgn)
+				pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
 
 			if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
 			{
@@ -7164,8 +7145,8 @@ BOOL CGvisR2R_PunchDoc::CopyDefImgDn(int nSerial, CString sNewLot)
 			int nPcrIdx = pDoc->GetPcrIdx1(nSerial);
 			int nPcsIdx = pDoc->m_pPcr[1][nPcrIdx]->m_pDefPcs[i];
 			int nDefCode = pDoc->m_pPcr[1][nPcrIdx]->m_pDefType[i];
-			if (pDoc->m_Master[0].m_pPcsRgn)
-				pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+			if (pView->m_mgrReelmap->m_pPcsRgn)
+				pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
 
 			if (WorkingInfo.System.sPathOldFile.Right(1) != "\\")
 			{
@@ -10156,9 +10137,16 @@ BOOL CGvisR2R_PunchDoc::GetCurrentInfoEng()
 #ifdef TEST_MODE
 	return bRtn;
 #endif
-
-	if (sPath.IsEmpty() || (GetTestMode() != MODE_INNER && GetTestMode() != MODE_OUTER))
-		return bRtn;
+	if (pView->m_bJoinContinue)
+	{
+		if (sPath.IsEmpty() || (GetNextTestMode() != MODE_INNER && GetNextTestMode() != MODE_OUTER))
+			return bRtn;
+	}
+	else
+	{
+		if (sPath.IsEmpty() || (GetTestMode() != MODE_INNER && GetTestMode() != MODE_OUTER))
+			return bRtn;
+	}
 
 	if (0 < ::GetPrivateProfileString(_T("Infomation"), _T("Dual Test"), NULL, szData, sizeof(szData), sPath))
 		m_bEngDualTest = _ttoi(szData) > 0 ? TRUE : FALSE;
@@ -12664,26 +12652,30 @@ int CGvisR2R_PunchDoc::GetAoiUpCamMstInfo()
 		pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLot);
 		
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
-		pDoc->m_Master[0].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+		pView->m_mgrReelmap->m_pMasterInfo->nOutFileOnAoi = _ttoi(szData);
 	else
-		pDoc->m_Master[0].MasterInfo.nOutFileOnAoi = -1;
+		pView->m_mgrReelmap->m_pMasterInfo->nOutFileOnAoi = -1;
 
-	return pDoc->m_Master[0].MasterInfo.nOutFileOnAoi;
+	return pView->m_mgrReelmap->m_pMasterInfo->nOutFileOnAoi;
 }
 
 int CGvisR2R_PunchDoc::GetAoiDnCamMstInfo()
 {
 	TCHAR szData[200];
 	CString sPath;
+	int nOutFileOnAoi;
 	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiDnVrsData,
 		pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sLayerDn, pDoc->WorkingInfo.CurrModel.sLot);
 
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
-		pDoc->m_Master[1].MasterInfo.nOutFileOnAoi = _ttoi(szData);
+		nOutFileOnAoi = _ttoi(szData);
+		//pDoc->m_Master[1].MasterInfo.nOutFileOnAoi = _ttoi(szData);
 	else
-		pDoc->m_Master[1].MasterInfo.nOutFileOnAoi = -1;
+		nOutFileOnAoi = -1;
+		//pDoc->m_Master[1].MasterInfo.nOutFileOnAoi = -1;
 
-	return pDoc->m_Master[1].MasterInfo.nOutFileOnAoi;
+	return nOutFileOnAoi;
+	//return pDoc->m_Master[1].MasterInfo.nOutFileOnAoi;
 }
 
 // Write Log for Auto
@@ -13008,7 +13000,7 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 		WorkingInfo.CurrModel.sLot = WorkingInfo.NextModel.sLot;
 		WorkingInfo.CurrModel.sLayerUp = WorkingInfo.NextModel.sLayerUp;
 
-		pView->ResetMkInfo(0); // CAD 데이터 리로딩   0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+		pView->ResetMkInfo(); // CAD 데이터 리로딩
 		WriteChangedModel();
 
 		if (pView->m_pDlgMenu01)
@@ -13111,7 +13103,7 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 			nFileSize = nFileSize - nTemp - 1;
 			m_pPcr[0][nIdx]->m_pDefType[i] = _tstoi(strBadName);
 
-			pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
+			pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
 			m_pPcr[0][nIdx]->m_arDefType[nR][nC] = m_pPcr[0][nIdx]->m_pDefType[i];
 			m_pPcr[0][nIdx]->m_arPcrLineNum[nR][nC] = i;
 
@@ -13363,7 +13355,7 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 		//WorkingInfo.CurrModel.sLayerUp = WorkingInfo.NextModel.sLayerUp;
 		WorkingInfo.CurrModel.sLayerDn = WorkingInfo.NextModel.sLayerDn;
 
-		pView->ResetMkInfo(1); // CAD 데이터 리로딩   0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+		pView->ResetMkInfo(); // CAD 데이터 리로딩
 		WriteChangedModel();
 
 		if (pView->m_pDlgMenu01)
@@ -13465,7 +13457,7 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 			m_pPcr[1][nIdx]->m_pDefType[i] = _tstoi(strBadName);
 
 			// Temp for ITS - m_pPcr[0][nIdx]->m_pDefPcs[i] = Rotate180(_tstoi(strPieceID));
-			pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(Rotate180(m_pPcr[1][nIdx]->m_pDefPcs[i]), nC, nR);
+			pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(Rotate180(m_pPcr[1][nIdx]->m_pDefPcs[i]), nC, nR);
 			m_pPcr[1][nIdx]->m_arDefType[nR][nC] = m_pPcr[1][nIdx]->m_pDefType[i];
 			m_pPcr[1][nIdx]->m_arPcrLineNum[nR][nC] = i;
 

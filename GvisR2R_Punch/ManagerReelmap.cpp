@@ -59,6 +59,8 @@ void CManagerReelmap::OnTimer(UINT_PTR nIDEvent)
 
 void CManagerReelmap::Init()
 {
+	int i = 0;
+
 	m_cBigDefCode[0] = '*';		//	None
 	m_cBigDefCode[1] = 'N';		//	NICK
 	m_cBigDefCode[2] = 'D';		//	PROTRUSION
@@ -174,11 +176,64 @@ void CManagerReelmap::Init()
 	m_rgbDef[DEF_VH_DEF] = (RGB_BROWN);
 	m_rgbDef[DEF_LIGHT] = (RGB_YELLOW);
 
+	m_nNodeX = 0;
+	m_nNodeY = 0;
+	m_pCellRgn = NULL;
+	m_pPcsRgn = NULL;
+
+	m_pPinImg = NULL;
+	m_pPcsImg = NULL;
+	m_pAlignImg[0] = NULL;
+	m_pAlignImg[1] = NULL;
+	m_pAlignImg[2] = NULL;
+	m_pAlignImg[3] = NULL;
+
+	m_pPinImgInner = NULL;
+	m_pPcsImgInner = NULL;
+	m_pAlignImgInner[0] = NULL;
+	m_pAlignImgInner[1] = NULL;
+	m_pAlignImgInner[2] = NULL;
+	m_pAlignImgInner[3] = NULL;
+
+	m_stAlignMk.X0 = 0.0;
+	m_stAlignMk.Y0 = 0.0;
+	m_stAlignMk.X1 = 0.0;
+	m_stAlignMk.Y1 = 0.0;
+
+	m_stAlignMk2.X0 = 0.0;
+	m_stAlignMk2.Y0 = 0.0;
+	m_stAlignMk2.X1 = 0.0;
+	m_stAlignMk2.Y1 = 0.0;
+	m_stAlignMk2.X2 = 0.0;
+	m_stAlignMk2.Y2 = 0.0;
+	m_stAlignMk2.X3 = 0.0;
+	m_stAlignMk2.Y3 = 0.0;
+
+	for (i = 0; i < MAX_PCS; i++)
+	{
+		m_stPcsMk[i].X = 0.0;
+		m_stPcsMk[i].Y = 0.0;
+	}
+
 	LoadConfig();
 }
 
 void CManagerReelmap::Reset()
 {
+	m_nNodeX = 0;
+	m_nNodeY = 0;
+
+	if (m_pCellRgn)
+	{
+		delete m_pCellRgn;
+		m_pCellRgn = NULL;
+	}
+
+	if (m_pPcsRgn)
+	{
+		delete m_pPcsRgn;
+		m_pPcsRgn = NULL;
+	}
 }
 
 BOOL CManagerReelmap::InitAct()
@@ -3346,4 +3401,203 @@ BOOL CManagerReelmap::ChkYield() // 수율 양호 : TRUE , 수율 불량 : FALSE
 	}
 
 	return TRUE;
+}
+
+BOOL CManagerReelmap::LoadMstInfo()
+{
+	BOOL bDualTestInner;
+	BOOL bGetCurrentInfoEng = FALSE;
+	bGetCurrentInfoEng = pDoc->GetCurrentInfoEng(); // TRUE: MODE_INNER or MODE_OUTER
+	pDoc->GetCamPxlRes();
+
+	CString sLot, sLayerUp, sLayerDn;
+	if (ChkModelInfo(0)) // Up
+	{
+		if (bGetCurrentInfoEng)
+		{
+			m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->m_sEngModel,
+				pDoc->m_sEngLayerUp);
+			m_Master[0].LoadMstInfo();
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+				{
+					if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+					{
+						m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->m_sEngModel,
+							sLayerUp);
+						m_MasterInner[0].LoadMstInfo();
+					}
+				}
+			}
+		}
+		else
+		{
+			m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->WorkingInfo.CurrModel.sModel,
+				pDoc->WorkingInfo.CurrModel.sLayerUp);
+			m_Master[0].LoadMstInfo();
+			//m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
+		}
+	}
+
+	if (ChkModelInfo(1)) // Dn
+	{
+		if (bGetCurrentInfoEng)
+		{
+			m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->m_sEngModel,
+				pDoc->m_sEngLayerDn,
+				pDoc->m_sEngLayerUp);
+
+			m_Master[1].LoadMstInfo();
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+				{
+					if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
+					{
+						m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+							pDoc->m_sEngModel,
+							sLayerDn,
+							sLayerUp);
+						m_MasterInner[1].LoadMstInfo();
+					}
+				}
+			}
+		}
+		else
+		{
+			m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				pDoc->WorkingInfo.CurrModel.sModel,
+				pDoc->WorkingInfo.CurrModel.sLayerDn,
+				pDoc->WorkingInfo.CurrModel.sLayerUp);
+
+			m_Master[1].LoadMstInfo();
+		}
+	}
+	
+	return TRUE;
+}
+
+BOOL CManagerReelmap::ChkModelInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+{
+	switch (nAoi)
+	{
+	case 0: // AOI-Up
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sModel.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sLayerUp.IsEmpty())
+			return FALSE;
+		break;
+	case 1: // AOI-Dn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sModel.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	case 2: // AOI-UpDn
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sModel.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sLayerUp.IsEmpty())
+			return FALSE;
+		if (pDoc->WorkingInfo.System.sPathCamSpecDir.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sModel.IsEmpty() ||
+			pDoc->WorkingInfo.CurrModel.sLayerDn.IsEmpty())
+			return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+void CManagerReelmap::SetAlignPos()
+{
+	if (pView->m_pMotion)
+	{
+		pView->m_pMotion->m_dAlignPosX[0][0] = m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
+		pView->m_pMotion->m_dAlignPosY[0][0] = m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
+		pView->m_pMotion->m_dAlignPosX[0][1] = m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
+		pView->m_pMotion->m_dAlignPosY[0][1] = m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
+
+		pView->m_pMotion->m_dAlignPosX[1][0] = m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
+		pView->m_pMotion->m_dAlignPosY[1][0] = m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
+		pView->m_pMotion->m_dAlignPosX[1][1] = m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
+		pView->m_pMotion->m_dAlignPosY[1][1] = m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
+	}
+}
+
+BOOL CManagerReelmap::SetMstInfo()
+{
+	int i = 0;
+
+	m_pMasterInfo = &m_Master[Up].MasterInfo;
+	m_pMasterInfoInner = &m_MasterInner[Up].MasterInfo;
+
+	m_nNodeX = m_Master[Up].m_pPcsRgn->nCol;
+	m_nNodeY = m_Master[Up].m_pPcsRgn->nRow;
+	m_pCellRgn = m_Master[Up].m_pCellRgn;
+	m_pPcsRgn = m_Master[Up].m_pPcsRgn;
+	m_pCADCellImg[Up] = &m_Master[Up].m_pCADCellImg;
+	m_pCADCellImg[Dn] = &m_Master[Dn].m_pCADCellImg;
+	m_pCADCellImgInner[Up] = &m_MasterInner[Up].m_pCADCellImg;
+	m_pCADCellImgInner[Dn] = &m_MasterInner[Dn].m_pCADCellImg;
+
+	m_pPinImg = m_Master[Up].m_pPinImg;
+	m_pPcsImg = m_Master[Up].m_pPcsImg;
+	m_pAlignImg[0] = m_Master[Up].m_pAlignImg[0];
+	m_pAlignImg[1] = m_Master[Up].m_pAlignImg[1];
+	m_pAlignImg[2] = m_Master[Up].m_pAlignImg[2];
+	m_pAlignImg[3] = m_Master[Up].m_pAlignImg[3];
+
+	m_pPinImgInner = m_MasterInner[Up].m_pPinImg;
+	m_pPcsImgInner = m_MasterInner[Up].m_pPcsImg;
+	m_pAlignImgInner[0] = m_MasterInner[Up].m_pAlignImg[0];
+	m_pAlignImgInner[1] = m_MasterInner[Up].m_pAlignImg[1];
+	m_pAlignImgInner[2] = m_MasterInner[Up].m_pAlignImg[2];
+	m_pAlignImgInner[3] = m_MasterInner[Up].m_pAlignImg[3];
+
+	m_stAlignMk.X0 = m_Master[Up].m_stAlignMk.X0;		// 캠마스터에서 가져온 2point 정렬영상 이미지 좌표.
+	m_stAlignMk.Y0 = m_Master[Up].m_stAlignMk.X0;
+	m_stAlignMk.X1 = m_Master[Up].m_stAlignMk.X0;
+	m_stAlignMk.Y1 = m_Master[Up].m_stAlignMk.X0;
+	m_stAlignMk2.X0 = m_Master[Up].m_stAlignMk2.X0;		// 캠마스터에서 가져온 4point 정렬영상 이미지 좌표.
+	m_stAlignMk2.Y0 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.X1 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.Y1 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.X2 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.Y2 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.X3 = m_Master[Up].m_stAlignMk2.X0;
+	m_stAlignMk2.Y3 = m_Master[Up].m_stAlignMk2.X0;
+	for (i = 0; i < MAX_PCS; i++)
+	{
+		m_stPcsMk[i].X = m_Master[Up].m_stPcsMk[i].X;	// 캠마스터에서 가져온 마킹 인덱스 좌표.
+		m_stPcsMk[i].Y = m_Master[Up].m_stPcsMk[i].Y;
+	}
+
+	return TRUE;
+}
+
+CString CManagerReelmap::GetMasterLocation()
+{
+	return m_Master[Up].GetMasterLocation();
+}
+
+void CManagerReelmap::SetPinPos(int nCam, CfPoint ptPnt)
+{
+	m_Master[Up].m_pPcsRgn->SetPinPos(nCam, ptPnt);
+}
+
+BOOL CManagerReelmap::IsMstSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
+{
+	return m_Master[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
+}
+
+BOOL CManagerReelmap::IsMstInnerSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
+{
+	return m_MasterInner[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
 }

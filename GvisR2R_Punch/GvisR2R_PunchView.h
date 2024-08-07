@@ -337,7 +337,7 @@ class CGvisR2R_PunchView : public CFormView
 	BOOL SortingOutDn(int* pSerial, int nTot);
 	void SwapDn(__int64 *num1, __int64 *num2);
 
-	BOOL LoadMstInfo();
+	BOOL LoadMstInfo(); // Reelmap 초기화
 
 	void DoAutoEng();
 	void DoAtuoGetEngStSignal();
@@ -922,8 +922,8 @@ public:
 	BOOL StopLive();
 	BOOL StopLive0();
 	BOOL StopLive1();
-	void ResetMkInfo(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
-	void ModelChange(int nAoi = 0); // 0 : AOI-Up , 1 : AOI-Dn
+	void ResetMkInfo(int nAoi); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn // Call LoadMstInfo()
+	void ModelChange(int nAoi); // 0 : AOI-Up , 1 : AOI-Dn
 	void UpdateRst();
 	void ClrMkInfo();
 	int GetAutoStep();
@@ -1264,6 +1264,8 @@ public:
 	void CloseMgr();
 	void CreateMgrReelmap();
 	void CloseMgrReelmap();
+	void ResetMkInfo(); // CAD 데이터 리로딩 (AOI-UpDn)
+	void ModelChange(); // (AOI-UpDn) 
 
 // 재정의입니다.
 public:

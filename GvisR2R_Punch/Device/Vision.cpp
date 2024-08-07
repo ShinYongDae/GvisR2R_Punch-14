@@ -848,22 +848,17 @@ void CVision::FreeDispDef(HWND hDispCtrl, CRect rtDispCtrl, int nIdx, int nDispl
 	}
 }
 
-void CVision::InitCADBuf(int nLayer)
+void CVision::InitCADBuf()
 {
-	REGION_STRIP *pCellRgn[2];
-	if(m_nIdx == 0 || m_nIdx == 1)
-		pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
-	else
-		pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
+	REGION_STRIP* pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
 
 	if(MilCADImgBuf)
 		MbufFree(MilCADImgBuf);
-	if (pCellRgn[nLayer])
+	if (pCellRgn)
 	{
 		if (m_pMil)
-			MbufAlloc2d(m_pMil->GetSystemID(), pCellRgn[nLayer]->ProcSizeX, pCellRgn[nLayer]->ProcSizeY, 1L + M_UNSIGNED, M_IMAGE + M_PROC, &MilCADImgBuf);
+			MbufAlloc2d(m_pMil->GetSystemID(), pCellRgn->ProcSizeX, pCellRgn->ProcSizeY, 1L + M_UNSIGNED, M_IMAGE + M_PROC, &MilCADImgBuf);
 	}
-
 
 	if(MilBufCADTemp)
 		MbufFree(MilBufCADTemp);
@@ -1061,44 +1056,50 @@ void CVision::CropCadImg(int nIdxMkInfo, int nSerial, int nLayer, int nIdxDef)
 
 	if (m_nIdx == 0 || m_nIdx == 1)
 	{
-		if (!pDoc->m_pPcr[nLayer])
-			return;
-#ifndef USE_MIL
-		cell = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pCell[0];			// for Test - BufIdx[0], DefIdx[0]
-		cx = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].x;		// for Test - BufIdx[0], DefIdx[0]
-		cy = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].y;		// for Test - BufIdx[0], DefIdx[0]
-#else
-		nIdx = pDoc->GetPcrIdx1(nSerial);
-		if (!pDoc->m_pPcr[nLayer][nIdx])
-			return;
-		if (!pDoc->m_pPcr[nLayer][nIdx]->m_pCell || !pDoc->m_pPcr[nLayer][nIdx]->m_pDefPos ||
-			!pDoc->m_Master[nLayer].m_pCellRgn)
-			return;
+		//if (!pDoc->m_pPcr[nLayer])
+		//	return;
+		if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pPcr[nLayer]) return;
 
-		cell = pDoc->m_pPcr[nLayer][nIdx]->m_pCell[nIdxDef];										// BufIdx[], DefIdx[]
-		cx = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPos[nIdxDef].x - pDoc->m_Master[nLayer].m_pCellRgn->StPosX[cell];		// BufIdx[], DefIdx[]
-		cy = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPos[nIdxDef].y - pDoc->m_Master[nLayer].m_pCellRgn->StPosY[cell];		// BufIdx[], DefIdx[]
+#ifndef USE_MIL
+		//cell = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pCell[0];			// for Test - BufIdx[0], DefIdx[0]
+		//cx = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].x;		// for Test - BufIdx[0], DefIdx[0]
+		//cy = pDoc->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].y;		// for Test - BufIdx[0], DefIdx[0]
+		cell = pView->m_mgrReelmap->m_pPcr[nLayer][TEST_SHOT - 1]->m_pCell[0];			// for Test - BufIdx[0], DefIdx[0]
+		cx = pView->m_mgrReelmap->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].x;		// for Test - BufIdx[0], DefIdx[0]
+		cy = pView->m_mgrReelmap->m_pPcr[nLayer][TEST_SHOT - 1]->m_pDefPos[0].y;		// for Test - BufIdx[0], DefIdx[0]
+#else
+		//nIdx = pDoc->GetPcrIdx1(nSerial);
+		//if (!pDoc->m_pPcr[nLayer][nIdx])
+		//	return;
+		//if (!pDoc->m_pPcr[nLayer][nIdx]->m_pCell || !pDoc->m_pPcr[nLayer][nIdx]->m_pDefPos || !pView->m_mgrReelmap->m_pCellRgn)			//!pDoc->m_Master[nLayer].m_pCellRgn)
+		//	return;
+		nIdx = pView->m_mgrReelmap->GetPcrIdx1(nSerial);
+		if (!pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]) return;
+		if (!pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]->m_pCell || !pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPos || !pView->m_mgrReelmap->m_pCellRgn) return;
+
+		cell = pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]->m_pCell[nIdxDef];										// BufIdx[], DefIdx[]
+		cx = pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPos[nIdxDef].x - pView->m_mgrReelmap->m_pCellRgn->StPosX[cell];		// BufIdx[], DefIdx[]
+		cy = pView->m_mgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPos[nIdxDef].y - pView->m_mgrReelmap->m_pCellRgn->StPosY[cell];		// BufIdx[], DefIdx[]
 #endif
 	}
 	else
 	{
-		if (!pDoc->m_pPcrInner[nLayer])
+		if (!pView->m_mgrReelmap->m_pPcrInner[nLayer])
 			return;
 #ifndef USE_MIL
-		cell = pDoc->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pCell[0];			// for Test - BufIdx[0], DefIdx[0]
-		cx = pDoc->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pDefPos[0].x;		// for Test - BufIdx[0], DefIdx[0]
-		cy = pDoc->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pDefPos[0].y;		// for Test - BufIdx[0], DefIdx[0]
+		cell = pView->m_mgrReelmap->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pCell[0];			// for Test - BufIdx[0], DefIdx[0]
+		cx = pView->m_mgrReelmap->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pDefPos[0].x;		// for Test - BufIdx[0], DefIdx[0]
+		cy = pView->m_mgrReelmap->m_pPcrInner[nLayer][TEST_SHOT - 1]->m_pDefPos[0].y;		// for Test - BufIdx[0], DefIdx[0]
 #else
-		nIdx = pDoc->GetPcrIdx1(nSerial);
-		if (!pDoc->m_pPcrInner[nLayer][nIdx])
+		nIdx = pView->m_mgrReelmap->GetPcrIdx1(nSerial);
+		if (!pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx])
 			return;
-		if (!pDoc->m_pPcrInner[nLayer][nIdx]->m_pCell || !pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPos ||
-			!pDoc->m_MasterInner[nLayer].m_pCellRgn)
+		if (!pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pCell || !pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPos || !pView->m_mgrReelmap->m_pCellRgn)
 			return;
 
-		cell = pDoc->m_pPcrInner[nLayer][nIdx]->m_pCell[nIdxDef];										// BufIdx[], DefIdx[]
-		cx = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPos[nIdxDef].x - pDoc->m_MasterInner[nLayer].m_pCellRgn->StPosX[cell];		// BufIdx[], DefIdx[]
-		cy = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPos[nIdxDef].y - pDoc->m_MasterInner[nLayer].m_pCellRgn->StPosY[cell];		// BufIdx[], DefIdx[]
+		cell = pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pCell[nIdxDef];										// BufIdx[], DefIdx[]
+		cx = pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPos[nIdxDef].x - pView->m_mgrReelmap->m_MasterInner[nLayer].m_pCellRgn->StPosX[cell];		// BufIdx[], DefIdx[]
+		cy = pView->m_mgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPos[nIdxDef].y - pView->m_mgrReelmap->m_MasterInner[nLayer].m_pCellRgn->StPosY[cell];		// BufIdx[], DefIdx[]
 #endif
 	}
 
@@ -1116,21 +1117,24 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 	int stx, sty, edx, edy;
 	int CelNum;
 
-	REGION_STRIP *pCellRgn[2];
+	REGION_STRIP *pCellRgn;
 
 
-	if (m_nIdx == 0 || m_nIdx == 1)
-	{
-		pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
-		CellX = cell / pDoc->m_Master[nLayer].m_pCellRgn->NodeNumY;
-		CellY = cell % pDoc->m_Master[nLayer].m_pCellRgn->NodeNumY;
-	}
-	else
-	{
-		pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
-		CellX = cell / pDoc->m_MasterInner[nLayer].m_pCellRgn->NodeNumY;
-		CellY = cell % pDoc->m_MasterInner[nLayer].m_pCellRgn->NodeNumY;
-	}
+	pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
+	CellX = cell / pView->m_mgrReelmap->m_pCellRgn->NodeNumY;
+	CellY = cell % pView->m_mgrReelmap->m_pCellRgn->NodeNumY;
+	//if (m_nIdx == 0 || m_nIdx == 1)
+	//{
+	//	pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
+	//	CellX = cell / pDoc->m_Master[nLayer].m_pCellRgn->NodeNumY;
+	//	CellY = cell % pDoc->m_Master[nLayer].m_pCellRgn->NodeNumY;
+	//}
+	//else
+	//{
+	//	pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
+	//	CellX = cell / pDoc->m_MasterInner[nLayer].m_pCellRgn->NodeNumY;
+	//	CellY = cell % pDoc->m_MasterInner[nLayer].m_pCellRgn->NodeNumY;
+	//}
 
 
 	dx = DEF_IMG_DISP_SIZEX;
@@ -1144,15 +1148,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 	IsUpNode = 0;
 	IsDownNode = 0;
 
-	if (pCellRgn[nLayer]->NodeNumY > 0)
+	if (pCellRgn->NodeNumY > 0)
 	{
 		IsLeftSwath = (CellX == 0 ? 1 : 0);
-		IsRightSwath = ((CellX + 1) ==pCellRgn[nLayer]->NodeNumX ? 1 : 0);
+		IsRightSwath = ((CellX + 1) == pCellRgn->NodeNumX ? 1 : 0);
 		IsTopNode  = (CellY == 0 ? 1 : 0);
-		IsBottomNode  = ((CellY + 1) == pCellRgn[nLayer]->NodeNumY ? 1 : 0);
+		IsBottomNode  = ((CellY + 1) == pCellRgn->NodeNumY ? 1 : 0);
 
-		IsUpNode = (CellY % pCellRgn[nLayer]->nCellDivideY == 0 ? 1 : 0);
-		IsDownNode = ((CellY % pCellRgn[nLayer]->nCellDivideY) == (pCellRgn[nLayer]->nCellDivideY-1) ? 1 : 0);
+		IsUpNode = (CellY % pCellRgn->nCellDivideY == 0 ? 1 : 0);
+		IsDownNode = ((CellY % pCellRgn->nCellDivideY) == (pCellRgn->nCellDivideY-1) ? 1 : 0);
 	}
 	else
 	{
@@ -1177,15 +1181,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				{
 					SetCADCoord(cell, stx, sty, 1, nLayer);
 					CelNum = 1;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]))
+					if(0 <= (pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < -sty)
+						if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < -sty)
 						{
 							SetCADCoord(cell, stx, sty, 31, nLayer);
 							CelNum = 2;
 						}					
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < 0)
+					else if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 41, nLayer);
 							CelNum = 2;						
@@ -1211,16 +1215,16 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 					SetCADCoord(cell, stx, sty, 1, nLayer);
 					SetCADCoord(cell, stx, sty, 24, nLayer);
 					CelNum = 2;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]))
+					if(0 <= (pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < -sty)
+						if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < -sty)
 						{
 							SetCADCoord(cell, stx, sty, 30, nLayer);
 							SetCADCoord(cell, stx, sty, 31, nLayer);
 							CelNum = 4;
 						}					
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < 0)
+					else if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 40, nLayer);
 							SetCADCoord(cell, stx, sty, 41, nLayer);
@@ -1237,7 +1241,7 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				}
 			}
 		}
-		else if(edy > pCellRgn[nLayer]->ProcSizeY)
+		else if(edy > pCellRgn->ProcSizeY)
 		{
 			if(IsLeftSwath && IsBottomNode)
 			{
@@ -1250,15 +1254,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				{
 					SetCADCoord(cell, stx, sty, 7, nLayer);
 					CelNum = 1;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]))
+					if(0 <= (pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - sty)))
+						if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - sty)))
 						{
 							SetCADCoord(cell, stx, sty, 26, nLayer);
 							CelNum = 2;
 						}					
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < 0)
+					else if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 36, nLayer);
 							CelNum = 2;						
@@ -1284,16 +1288,16 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 					SetCADCoord(cell, stx, sty, 7, nLayer);
 					SetCADCoord(cell, stx, sty, 22, nLayer);
 					CelNum = 2;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]))
+					if(0 <= (pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - sty)))
+						if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - sty)))
 						{
 							SetCADCoord(cell, stx, sty, 25, nLayer);
 							SetCADCoord(cell, stx, sty, 26, nLayer);
 							CelNum = 4;
 						}			
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < 0)
+					else if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 35, nLayer);
 							SetCADCoord(cell, stx, sty, 36, nLayer);
@@ -1321,7 +1325,7 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 			}
 		}
 	}
-	else if(edx > pCellRgn[nLayer]->ProcSizeX)
+	else if(edx > pCellRgn->ProcSizeX)
 	{
 		if(sty < 0)
 		{
@@ -1336,15 +1340,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				{
 					SetCADCoord(cell, stx, sty, 3, nLayer);
 					CelNum = 1;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]))
+					if(0 <= (pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < -sty)
+						if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < -sty)
 						{
 							SetCADCoord(cell, stx, sty, 33, nLayer);
 							CelNum = 2;
 						}
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < 0)
+					else if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 43, nLayer);
 							CelNum = 2;
@@ -1370,16 +1374,16 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 					SetCADCoord(cell, stx, sty, 3, nLayer);
 					SetCADCoord(cell, stx, sty, 14, nLayer);
 					CelNum = 2;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]))
+					if(0 <= (pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < -sty)
+						if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < -sty)
 						{
 							SetCADCoord(cell, stx, sty, 33, nLayer);
 							SetCADCoord(cell, stx, sty, 34, nLayer);
 							CelNum = 4;
 						}
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < 0)
+					else if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 43, nLayer);
 							SetCADCoord(cell, stx, sty, 44, nLayer);
@@ -1396,7 +1400,7 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				}
 			}
 		}
-		else if(edy > pCellRgn[nLayer]->ProcSizeY)
+		else if(edy > pCellRgn->ProcSizeY)
 		{
 			if(IsRightSwath && IsBottomNode)
 			{
@@ -1409,15 +1413,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				{
 					SetCADCoord(cell, stx, sty, 5, nLayer);
 					CelNum = 1;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]))
+					if(0 <= (pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - sty)))
+						if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - sty)))
 						{
 							SetCADCoord(cell, stx, sty, 28, nLayer);
 							CelNum = 2;
 						}
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < 0)
+					else if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 38, nLayer);
 							CelNum = 2;
@@ -1443,9 +1447,9 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 					SetCADCoord(cell, stx, sty, 5, nLayer);
 					SetCADCoord(cell, stx, sty, 16, nLayer);
 					CelNum = 2;
-					if(0 <= (pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]))
+					if(0 <= (pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]))
 					{
-						if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - sty)))
+						if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - sty)))
 						{
 							SetCADCoord(cell, stx, sty, 28, nLayer);
 							SetCADCoord(cell, stx, sty, 29, nLayer);
@@ -1453,7 +1457,7 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 						}
 
 					}
-					else if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < 0)
+					else if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < 0)
 					{
 							SetCADCoord(cell, stx, sty, 38, nLayer);
 							SetCADCoord(cell, stx, sty, 39, nLayer);
@@ -1494,15 +1498,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 			{
 				SetCADCoord(cell, stx, sty, 2, nLayer);
 				CelNum = 1;
-				if(0 <= (pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]))
+				if(0 <= (pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]))
 				{
-					if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < -sty)
+					if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < -sty)
 					{
 						SetCADCoord(cell, stx, sty, 32, nLayer);
 						CelNum = 2;
 					}
 				}
-				else if((pCellRgn[nLayer]->StPosY[cell] - pCellRgn[nLayer]->EdPosY[cell-1]) < 0)
+				else if((pCellRgn->StPosY[cell] - pCellRgn->EdPosY[cell-1]) < 0)
 				{
 						SetCADCoord(cell, stx, sty, 42, nLayer);
 						CelNum = 2;
@@ -1515,7 +1519,7 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 				CelNum = 2;
 			}
 		}
-		else if(edy > pCellRgn[nLayer]->ProcSizeY)
+		else if(edy > pCellRgn->ProcSizeY)
 		{
 			if(IsBottomNode)
 			{
@@ -1526,15 +1530,15 @@ void CVision::CropCadImg(short cell, short cx, short cy, int BufID, int nLayer)
 			{
 				SetCADCoord(cell, stx, sty, 6, nLayer);
 				CelNum = 1;
-				if(0 <= (pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]))
+				if(0 <= (pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]))
 				{
-					if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - sty)))
+					if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < (DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - sty)))
 					{
 						SetCADCoord(cell, stx, sty, 27, nLayer);
 						CelNum = 2;
 					}
 				}
-				else if((pCellRgn[nLayer]->StPosY[cell+1] - pCellRgn[nLayer]->EdPosY[cell]) < 0)
+				else if((pCellRgn->StPosY[cell+1] - pCellRgn->EdPosY[cell]) < 0)
 				{
 						SetCADCoord(cell, stx, sty, 37, nLayer);
 						CelNum = 2;
@@ -1569,11 +1573,12 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	long SizeX, SizeY;
 	long EmpStripThick;
 
-	REGION_STRIP *pCellRgn[2];
-	if (m_nIdx == 0 || m_nIdx == 1)
-		pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
-	else
-		pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
+	//REGION_STRIP *pCellRgn[2];
+	//if (m_nIdx == 0 || m_nIdx == 1)
+	//	pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
+	//else
+	//	pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
+	REGION_STRIP* pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
 
 	switch(Coord) 
 	{
@@ -1630,7 +1635,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	   }
 	   OrginalX = StX;
 	   OrginalY = 0;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   SizeX = pCellRgn->ProcSizeX - StX;
 	   SizeY = DEF_IMG_DISP_SIZEY+StY;
 	   DestX = 0;
 	   DestY = -StY;
@@ -1645,7 +1650,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	   }
 	   OrginalX = StX;
 	   OrginalY = StY;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   SizeX = pCellRgn->ProcSizeX - StX;
 	   SizeY = DEF_IMG_DISP_SIZEY;
 	   DestX = 0;
 	   DestY = 0;
@@ -1660,8 +1665,8 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	   }
 	   OrginalX = StX;
 	   OrginalY = StY;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = pCellRgn->ProcSizeY - StY;
 	   DestX = 0;
 	   DestY = 0;
 	   LoadCADBuf(CellNum, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
@@ -1676,7 +1681,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	   OrginalX = StX;
 	   OrginalY = StY;
 	   SizeX = DEF_IMG_DISP_SIZEX;
-	   SizeY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   SizeY = pCellRgn->ProcSizeY - StY;
 	   DestX = 0;
 	   DestY = 0;
 	   LoadCADBuf(CellNum, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
@@ -1691,7 +1696,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 	   OrginalX = 0;
 	   OrginalY = StY;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
-	   SizeY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   SizeY = pCellRgn->ProcSizeY - StY;
 	   DestX = -StX;
 	   DestY = 0;
 	   LoadCADBuf(CellNum, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
@@ -1718,13 +1723,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - pCellRgn[nLayer]->OvrYPix;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY - pCellRgn->OvrYPix;
 	   SizeX = -StX;
 	   SizeY = -StY;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 10:	// Top of Left Top Corner Outside
@@ -1734,7 +1739,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = 0;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - pCellRgn[nLayer]->OvrYPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY - pCellRgn->OvrYPix;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
 	   SizeY = -StY;
 	   DestX = -StX;
@@ -1749,7 +1754,7 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - pCellRgn[nLayer]->OvrYPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY - pCellRgn->OvrYPix;
 	   SizeX = DEF_IMG_DISP_SIZEX;
 	   SizeY = -StY;
 	   DestX = 0;
@@ -1764,8 +1769,8 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - pCellRgn[nLayer]->OvrYPix;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   OrginalY = pCellRgn->ProcSizeY + StY - pCellRgn->OvrYPix;
+	   SizeX = pCellRgn->ProcSizeX - StX;
 	   SizeY = -StY;
 	   DestX = 0;
 	   DestY = 0;
@@ -1778,13 +1783,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - pCellRgn[nLayer]->OvrYPix;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
+	   OrginalX = pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY - pCellRgn->OvrYPix;
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
 	   SizeY = -StY;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 14: 		// Right of Right Top Corner Outside
@@ -1793,13 +1798,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->OvrXPix;
 	   OrginalY = 0;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
 	   SizeY = DEF_IMG_DISP_SIZEY + StY;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = -StY;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 15: 		// Right Outside
@@ -1808,13 +1813,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->OvrXPix;
 	   OrginalY = StY;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
 	   SizeY = DEF_IMG_DISP_SIZEY;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 16: 		// Right of Right Bottom Corner Outside
@@ -1823,13 +1828,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->OvrXPix;
 	   OrginalY = StY;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
-	   SizeY = pCellRgn[nLayer]->ProcSizeY - StY;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
+	   SizeY = pCellRgn->ProcSizeY - StY;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 17: 		// Right of Right Bottom Corner Outside
@@ -1838,13 +1843,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->OvrYPix;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   OrginalX = pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->OvrYPix;
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
+	   DestX = pCellRgn->ProcSizeX - StX;
+	   DestY = pCellRgn->ProcSizeY - StY;
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 18: 		// Bottom of Right Bottom Corner Outside
@@ -1854,11 +1859,11 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->OvrYPix;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   OrginalY = pCellRgn->OvrYPix;
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -1869,11 +1874,11 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->OvrYPix;
+	   OrginalY = pCellRgn->OvrYPix;
 	   SizeX = DEF_IMG_DISP_SIZEX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -1884,11 +1889,11 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   break;
 	   }
 	   OrginalX = 0;
-	   OrginalY = pCellRgn[nLayer]->OvrYPix;
+	   OrginalY = pCellRgn->OvrYPix;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = -StX;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -1898,13 +1903,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->OvrYPix;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->OvrYPix;
 	   SizeX = -StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   DestY = pCellRgn->ProcSizeY - StY;
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 22: 		// Left Bottom of Left Bottom Corner Outside
@@ -1913,13 +1918,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
 	   OrginalY = StY;
 	   SizeX = -StX;
-	   SizeY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   SizeY = pCellRgn->ProcSizeY - StY;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 23: 		// Left Bottom of Left Bottom Corner Outside
@@ -1928,13 +1933,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
 	   OrginalY = StY;
 	   SizeX = -StX;
 	   SizeY = DEF_IMG_DISP_SIZEY;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 24: 		// Left Bottom of Left Bottom Corner Outside
@@ -1943,13 +1948,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
 	   OrginalY = 0;
 	   SizeX = -StX;
 	   SizeY = DEF_IMG_DISP_SIZEY + StY;
 	   DestX = 0;
 	   DestY = -StY;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 25: 		// Left Bottom of Left Bottom Corner Outside for Strip Mode
@@ -1958,14 +1963,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum + 1] - pCellRgn[nLayer]->EdPosY[CellNum]; 
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
+	   EmpStripThick = pCellRgn->StPosY[CellNum + 1] - pCellRgn->EdPosY[CellNum]; 
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
 	   OrginalY = 0;
 	   SizeX = -StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = EmpStripThick + (pCellRgn[nLayer]->ProcSizeY - StY);
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   DestY = EmpStripThick + (pCellRgn->ProcSizeY - StY);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 26: 		// Bottom of Left Bottom Corner Outside for Strip Mode
@@ -1974,13 +1979,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum + 1] - pCellRgn[nLayer]->EdPosY[CellNum]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum + 1] - pCellRgn->EdPosY[CellNum]; 
 	   OrginalX = 0;
 	   OrginalY = 0;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn->ProcSizeY - StY);
 	   DestX = -StX;
-	   DestY = EmpStripThick + (pCellRgn[nLayer]->ProcSizeY - StY);
+	   DestY = EmpStripThick + (pCellRgn->ProcSizeY - StY);
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -1990,13 +1995,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum + 1] - pCellRgn[nLayer]->EdPosY[CellNum]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum + 1] - pCellRgn->EdPosY[CellNum]; 
 	   OrginalX = StX;
 	   OrginalY = 0;
 	   SizeX = DEF_IMG_DISP_SIZEX;
-	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = EmpStripThick + (pCellRgn[nLayer]->ProcSizeY - StY);
+	   DestY = EmpStripThick + (pCellRgn->ProcSizeY - StY);
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -2006,13 +2011,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum + 1] - pCellRgn[nLayer]->EdPosY[CellNum]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum + 1] - pCellRgn->EdPosY[CellNum]; 
 	   OrginalX = StX;
 	   OrginalY = 0;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = EmpStripThick + (pCellRgn[nLayer]->ProcSizeY - StY);
+	   DestY = EmpStripThick + (pCellRgn->ProcSizeY - StY);
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -2022,14 +2027,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum + 1] - pCellRgn[nLayer]->EdPosY[CellNum]; 
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
+	   EmpStripThick = pCellRgn->StPosY[CellNum + 1] - pCellRgn->EdPosY[CellNum]; 
+	   OrginalX = pCellRgn->OvrXPix;
 	   OrginalY = 0;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn[nLayer]->ProcSizeY - StY);
-	   DestX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
-	   DestY = EmpStripThick + (pCellRgn[nLayer]->ProcSizeY - StY);
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = DEF_IMG_DISP_SIZEY - EmpStripThick - (pCellRgn->ProcSizeY - StY);
+	   DestX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
+	   DestY = EmpStripThick + (pCellRgn->ProcSizeY - StY);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 30: 		// Left Top of Left Top Corner Outside for Strip Mode
@@ -2038,14 +2043,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum] - pCellRgn[nLayer]->EdPosY[CellNum-1]; 
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY + EmpStripThick;
+	   EmpStripThick = pCellRgn->StPosY[CellNum] - pCellRgn->EdPosY[CellNum-1]; 
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY + EmpStripThick;
 	   SizeX = -StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 31: 		// Top of Left Top Corner Outside for Strip Mode
@@ -2054,9 +2059,9 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum] - pCellRgn[nLayer]->EdPosY[CellNum-1]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum] - pCellRgn->EdPosY[CellNum-1]; 
 	   OrginalX = 0;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY + EmpStripThick;
+	   OrginalY = pCellRgn->ProcSizeY + StY + EmpStripThick;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = -StX;
@@ -2070,9 +2075,9 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum] - pCellRgn[nLayer]->EdPosY[CellNum-1]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum] - pCellRgn->EdPosY[CellNum-1]; 
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - EmpStripThick;
+	   OrginalY = pCellRgn->ProcSizeY + StY - EmpStripThick;
 	   SizeX = DEF_IMG_DISP_SIZEX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
@@ -2086,10 +2091,10 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum] - pCellRgn[nLayer]->EdPosY[CellNum-1]; 
+	   EmpStripThick = pCellRgn->StPosY[CellNum] - pCellRgn->EdPosY[CellNum-1]; 
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - EmpStripThick;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   OrginalY = pCellRgn->ProcSizeY + StY - EmpStripThick;
+	   SizeX = pCellRgn->ProcSizeX - StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
 	   DestY = 0;
@@ -2102,14 +2107,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->StPosY[CellNum] - pCellRgn[nLayer]->EdPosY[CellNum-1]; 
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY - EmpStripThick;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
+	   EmpStripThick = pCellRgn->StPosY[CellNum] - pCellRgn->EdPosY[CellNum-1]; 
+	   OrginalX = pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY - EmpStripThick;
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
 	   SizeY = -StY - EmpStripThick;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 35: 		// Left Bottom of Left Bottom Corner Outside for Strip Mode
@@ -2118,14 +2123,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
 	   OrginalY = EmpStripThick;
 	   SizeX = -StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
-	   LoadCADBuf(CellNum - pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   DestY = pCellRgn->ProcSizeY - StY;
+	   LoadCADBuf(CellNum - pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 36: 		// Bottom of Left Bottom Corner Outside for Strip Mode
@@ -2134,13 +2139,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   OrginalX = 0;
 	   OrginalY = EmpStripThick;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = -StX;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -2150,13 +2155,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   OrginalX = StX;
 	   OrginalY = EmpStripThick;
 	   SizeX = DEF_IMG_DISP_SIZEX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -2166,13 +2171,13 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   OrginalX = StX;
 	   OrginalY = EmpStripThick;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
 	   DestX = 0;
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
+	   DestY = pCellRgn->ProcSizeY - StY;
 	   LoadCADBuf(CellNum + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
@@ -2182,14 +2187,14 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
+	   OrginalX = pCellRgn->OvrXPix;
 	   OrginalY = EmpStripThick;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
-	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn[nLayer]->ProcSizeY - StY);
-	   DestX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
-	   DestY = pCellRgn[nLayer]->ProcSizeY - StY;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   SizeX = pCellRgn->ProcSizeX - StX;
+	   SizeY = DEF_IMG_DISP_SIZEY - (pCellRgn->ProcSizeY - StY);
+	   DestX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
+	   DestY = pCellRgn->ProcSizeY - StY;
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY + 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 40: 		// Left Top of Left Top Corner Outside for Strip Mode
@@ -2198,19 +2203,19 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   if(abs(StY) <= abs(EmpStripThick))
 	   {
 		   RValue = TRUE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->ProcSizeX + StX - pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY;
+	   OrginalX = pCellRgn->ProcSizeX + StX - pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY;
 	   SizeX = -StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 41: 		// Top of Left Top Corner Outside for Strip Mode
@@ -2219,19 +2224,19 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   if(abs(StY) <= abs(EmpStripThick))
 	   {
 		   RValue = TRUE;
 		   break;
 	   }
 	   OrginalX = 0;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY;
+	   OrginalY = pCellRgn->ProcSizeY + StY;
 	   SizeX = DEF_IMG_DISP_SIZEX + StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = -StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 42: 		// Top Outside for Strip Mode
@@ -2240,19 +2245,19 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   if(abs(StY) <= abs(EmpStripThick))
 	   {
 		   RValue = TRUE;
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY;
+	   OrginalY = pCellRgn->ProcSizeY + StY;
 	   SizeX = DEF_IMG_DISP_SIZEX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 43: 		// Top of Right Top Corner Outside for Strip Mode
@@ -2261,19 +2266,19 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   if(abs(StY) <= abs(EmpStripThick))
 	   {
 		   RValue = TRUE;
 		   break;
 	   }
 	   OrginalX = StX;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY;
-	   SizeX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   OrginalY = pCellRgn->ProcSizeY + StY;
+	   SizeX = pCellRgn->ProcSizeX - StX;
 	   SizeY = -StY - EmpStripThick;
 	   DestX = 0;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	case 44: 		// Right Top of Right Top Corner Outside for Strip Mode
@@ -2282,19 +2287,19 @@ BOOL CVision::SetCADCoord(int CellNum, int StX, int StY, int Coord, int nLayer)
 		   RValue = FALSE;
 		   break;
 	   }
-	   EmpStripThick = pCellRgn[nLayer]->EdPosY[CellNum] - pCellRgn[nLayer]->StPosY[CellNum + 1];
+	   EmpStripThick = pCellRgn->EdPosY[CellNum] - pCellRgn->StPosY[CellNum + 1];
 	   if(abs(StY) <= abs(EmpStripThick))
 	   {
 		   RValue = TRUE;
 		   break;
 	   }
-	   OrginalX = pCellRgn[nLayer]->OvrXPix;
-	   OrginalY = pCellRgn[nLayer]->ProcSizeY + StY;
-	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn[nLayer]->ProcSizeX - StX);
+	   OrginalX = pCellRgn->OvrXPix;
+	   OrginalY = pCellRgn->ProcSizeY + StY;
+	   SizeX = DEF_IMG_DISP_SIZEX - (pCellRgn->ProcSizeX - StX);
 	   SizeY = -StY - EmpStripThick;
-	   DestX = pCellRgn[nLayer]->ProcSizeX - StX;
+	   DestX = pCellRgn->ProcSizeX - StX;
 	   DestY = 0;
-	   LoadCADBuf(CellNum + pCellRgn[nLayer]->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
+	   LoadCADBuf(CellNum + pCellRgn->NodeNumY - 1, OrginalX, OrginalY, DestX, DestY, SizeX, SizeY, nLayer);
 	   RValue = TRUE;
 	   break;
 	default:
@@ -2312,18 +2317,22 @@ void CVision::LoadCADBuf(int CurrCell, long OrgStX, long OrgStY, long DesStX, lo
 	TiffData tdat;
 
 #ifdef USE_CAM_MASTER
-	REGION_STRIP *pCellRgn[2];
+	//REGION_STRIP *pCellRgn[2];
 	UCHAR *pCADCellImg;
 
+	int nCellId = pView->m_mgrReelmap->m_nCellInspID[CurrCell];
+	REGION_STRIP* pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
 	if (m_nIdx == 0 || m_nIdx == 1)
 	{
-		pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
-		pCADCellImg = pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[CurrCell]];
+		pCADCellImg = (*pView->m_mgrReelmap->m_pCADCellImg[nLayer])[nCellId];
+		//pCellRgn[nLayer] = pDoc->m_Master[nLayer].m_pCellRgn;
+		//pCADCellImg = pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[CurrCell]];
 	}
 	else
 	{
-		pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
-		pCADCellImg = pDoc->m_MasterInner[nLayer].m_pCADCellImg[pDoc->m_MasterInner[nLayer].CellInspID[CurrCell]];
+		pCADCellImg = (*pView->m_mgrReelmap->m_pCADCellImgInner[nLayer])[nCellId];
+		//pCellRgn[nLayer] = pDoc->m_MasterInner[nLayer].m_pCellRgn;
+		//pCADCellImg = pDoc->m_MasterInner[nLayer].m_pCADCellImg[pDoc->m_MasterInner[nLayer].CellInspID[CurrCell]];
 	}
 
 	if (!MilCADImgBuf)
@@ -2332,7 +2341,7 @@ void CVision::LoadCADBuf(int CurrCell, long OrgStX, long OrgStY, long DesStX, lo
 	//if(VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[CurrCell]], tdat))
 	if(VicFileLoadFromMem(MilCADImgBuf, pCADCellImg, tdat))
 	{
-		if((OrgStX + SizeX) <= pCellRgn[nLayer]->ProcSizeX && (OrgStY + SizeY) <= pCellRgn[nLayer]->ProcSizeY)
+		if((OrgStX + SizeX) <= pCellRgn->ProcSizeX && (OrgStY + SizeY) <= pCellRgn->ProcSizeY)
 		{
 			if(SizeX < 0)
 			{
@@ -2383,9 +2392,13 @@ void CVision::LoadCADBuf(int CurrCell, long OrgStX, long OrgStY, long DesStX, lo
 		}
 	}
 #else
-	if (!MilCADImgBuf)
-		return;
-	if(VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[0]], tdat))
+	if (!MilCADImgBuf)	return;
+
+	int nCellId = pView->m_mgrReelmap->m_nCellInspID[0];
+	REGION_STRIP* pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
+
+	//if(VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[0]], tdat))
+	if (VicFileLoadFromMem(MilCADImgBuf, (*pView->m_mgrReelmap->m_pCADCellImg[nLayer])[nCellId], tdat))
 	{
 		MbufChild2d(MilCADImgBuf, 0, 0, DEF_IMG_DISP_SIZEX, DEF_IMG_DISP_SIZEY, &MilBufCADCld);
 		MbufChild2d(MilBufCADTemp, 0, 0, DEF_IMG_DISP_SIZEX, DEF_IMG_DISP_SIZEY, &MilBufCADTempCld);
@@ -2636,9 +2649,9 @@ void CVision::LoadPinBuf(int nLayer)
 	TiffData tdat;
 	UCHAR *pPinImg;
 	if (m_nIdx == 0 || m_nIdx == 1)
-		pPinImg = pDoc->m_Master[nLayer].m_pPinImg;
+		pPinImg = pView->m_mgrReelmap->m_pPinImg;	//pPinImg = pDoc->m_Master[nLayer].m_pPinImg;	
 	else
-		pPinImg = pDoc->m_MasterInner[nLayer].m_pPinImg;
+		pView->m_mgrReelmap->m_pPinImgInner;		//pPinImg = pDoc->m_MasterInner[nLayer].m_pPinImg;
 
 	//if(VicFileLoadFromMem(MilPinImgBuf, pDoc->m_Master[nLayer].m_pPinImg, tdat))
 	if (VicFileLoadFromMem(MilPinImgBuf, pPinImg, tdat))
@@ -2671,15 +2684,12 @@ void CVision::LoadPinBuf(int nLayer)
 		MimResize(MilPinImgBuf, MilOriginDisp->m_MilImage, (double)PIN_IMG_DISP_SIZEX/1024.0, (double)PIN_IMG_DISP_SIZEY/1024.0, M_DEFAULT);
 		MbufChild2d(MilOriginDisp->m_MilImage, 0, 0, PIN_IMG_DISP_SIZEX, PIN_IMG_DISP_SIZEY, &MilBufPinCld);
 
-
-
 		MbufChild2d(MilBufPinTemp, 0, 0, PIN_IMG_DISP_SIZEX, PIN_IMG_DISP_SIZEY, &MilBufPinTempCld);
 
 // 		MimRotate(MilBufPinCld, MilPatRtImg->m_MilImage, 90.0, M_DEFAULT, M_DEFAULT, M_DEFAULT, M_DEFAULT, M_DEFAULT);
 		MimRotate(MilBufPinCld, MilPatRtImg->m_MilImage, 0.0, M_DEFAULT, M_DEFAULT, M_DEFAULT, M_DEFAULT, M_DEFAULT);
 		if(MilPatRtImg->m_MilImage != M_NULL && MilBufPinTempCld != M_NULL)
 			MbufCopy(MilPatRtImg->m_MilImage, MilBufPinTempCld);
-
 
 		if(MilPatRtImg != NULL)
 		{
@@ -2727,17 +2737,25 @@ void CVision::LoadAlignBuf()
 	UCHAR *pAlignImg[4];
 	if (m_nIdx == 0 || m_nIdx == 1)
 	{
-		pAlignImg[0] = pDoc->m_Master[0].m_pAlignImg[0];
-		pAlignImg[1] = pDoc->m_Master[0].m_pAlignImg[1];
-		pAlignImg[2] = pDoc->m_Master[0].m_pAlignImg[2];
-		pAlignImg[3] = pDoc->m_Master[0].m_pAlignImg[3];
+		pAlignImg[0] = pView->m_mgrReelmap->m_pAlignImg[0];
+		pAlignImg[1] = pView->m_mgrReelmap->m_pAlignImg[1];
+		pAlignImg[2] = pView->m_mgrReelmap->m_pAlignImg[2];
+		pAlignImg[3] = pView->m_mgrReelmap->m_pAlignImg[3];
+		//pAlignImg[0] = pDoc->m_Master[0].m_pAlignImg[0];
+		//pAlignImg[1] = pDoc->m_Master[0].m_pAlignImg[1];
+		//pAlignImg[2] = pDoc->m_Master[0].m_pAlignImg[2];
+		//pAlignImg[3] = pDoc->m_Master[0].m_pAlignImg[3];
 	}
 	else
 	{
-		pAlignImg[0] = pDoc->m_MasterInner[0].m_pAlignImg[0];
-		pAlignImg[1] = pDoc->m_MasterInner[0].m_pAlignImg[1];
-		pAlignImg[2] = pDoc->m_MasterInner[0].m_pAlignImg[2];
-		pAlignImg[3] = pDoc->m_MasterInner[0].m_pAlignImg[3];
+		pAlignImg[0] = pView->m_mgrReelmap->m_pAlignImgInner[0];
+		pAlignImg[1] = pView->m_mgrReelmap->m_pAlignImgInner[1];
+		pAlignImg[2] = pView->m_mgrReelmap->m_pAlignImgInner[2];
+		pAlignImg[3] = pView->m_mgrReelmap->m_pAlignImgInner[3];
+		//pAlignImg[0] = pDoc->m_MasterInner[0].m_pAlignImg[0];
+		//pAlignImg[1] = pDoc->m_MasterInner[0].m_pAlignImg[1];
+		//pAlignImg[2] = pDoc->m_MasterInner[0].m_pAlignImg[2];
+		//pAlignImg[3] = pDoc->m_MasterInner[0].m_pAlignImg[3];
 	}
 
 	//if (pDoc->m_Master[0].m_pAlignImg[0])
@@ -4488,9 +4506,13 @@ void CVision::LoadCADBuf(UCHAR *pCADCellImg, long OrgStX, long OrgStY, long DesS
 		}
 	}
 #else
-	if (!MilCADImgBuf)
-		return;
-	if (VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[0]], tdat))
+	if (!MilCADImgBuf)	return;
+
+	int nCellId = pView->m_mgrReelmap->m_nCellInspID[0];
+	REGION_STRIP* pCellRgn = pView->m_mgrReelmap->m_pCellRgn;
+
+	//if (VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[0]], tdat))
+	if (VicFileLoadFromMem(MilCADImgBuf, (*pView->m_mgrReelmap->m_pCADCellImg[nLayer])[nCellId], tdat))
 	{
 		MbufChild2d(MilCADImgBuf, 0, 0, DEF_IMG_DISP_SIZEX, DEF_IMG_DISP_SIZEY, &MilBufCADCld);
 		MbufChild2d(MilBufCADTemp, 0, 0, DEF_IMG_DISP_SIZEX, DEF_IMG_DISP_SIZEY, &MilBufCADTempCld);

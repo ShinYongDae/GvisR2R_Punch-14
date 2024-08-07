@@ -110,9 +110,12 @@ BOOL CDlgCammasterinfoStrpcs::OnInitDialog()
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
 
 	CString sPath, sMstLoc, sModel, sLayer;
-	sMstLoc = pDoc->m_Master[0].GetMasterLocation();
-	sModel = pDoc->m_Master[0].GetModel();
-	sLayer = pDoc->m_Master[0].GetLayer();
+	//sMstLoc = pDoc->m_Master[0].GetMasterLocation();
+	sMstLoc = pView->m_mgrReelmap->GetMasterLocation();
+	//sModel = pDoc->m_Master[0].GetModel();
+	//sLayer = pDoc->m_Master[0].GetLayer();
+	sModel = pDoc->WorkingInfo.CurrModel.sModel;
+	sLayer = pDoc->WorkingInfo.CurrModel.sLayerUp;
 
 	if (sMstLoc.Right(1) != "\\")
 		sPath.Format(_T("%s\\%s\\%s\\strpcs.bin"), sMstLoc, sModel, sLayer);

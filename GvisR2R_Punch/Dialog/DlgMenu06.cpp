@@ -1444,7 +1444,7 @@ void CDlgMenu06::InitCadImg()
 	if(pView->m_pVisionInner[0])
 	{
 		//pView->m_pVisionInner[0]->InitDispCad();
-		pView->m_pVisionInner[0]->InitCADBuf(0); // Top Side
+		pView->m_pVisionInner[0]->InitCADBuf(); // Top Side
 	}
 
 	if(bDualTest)
@@ -1452,7 +1452,7 @@ void CDlgMenu06::InitCadImg()
 		if(pView->m_pVisionInner[1])
 		{
 			//pView->m_pVisionInner[1]->InitDispCad();
-			pView->m_pVisionInner[1]->InitCADBuf(1); // Bottom Side
+			pView->m_pVisionInner[1]->InitCADBuf(); // Bottom Side
 		}
 	}
 #endif
@@ -1464,7 +1464,7 @@ void CDlgMenu06::InitCadImgUp()
 	if(pView->m_pVisionInner[0])
 	{
 		//pView->m_pVisionInner[0]->InitDispCad();
-		pView->m_pVisionInner[0]->InitCADBuf(0);
+		pView->m_pVisionInner[0]->InitCADBuf();
 	}
 #endif
 }
@@ -1479,7 +1479,7 @@ void CDlgMenu06::InitCadImgDn()
 	if(pView->m_pVisionInner[1])
 	{
 		//pView->m_pVisionInner[1]->InitDispCad();
-		pView->m_pVisionInner[1]->InitCADBuf(1);
+		pView->m_pVisionInner[1]->InitCADBuf();
 	}
 #endif
 }
@@ -1888,8 +1888,10 @@ void CDlgMenu06::ShowDefInfoUp(int nIdx) // nIdx : 0 ~ 11 (12ea)
 	int nPcsIdx = pDoc->m_pPcrInner[0][nPcrIdx]->m_pDefPcs[m_nIdxDef[0]]; //m_pImg[m_nIdxDef];
 	nDefCode = pDoc->m_pPcrInner[0][nPcrIdx]->m_pDefType[m_nIdxDef[0]];
 	rgbDef = pDoc->m_pReelMapInner->m_rgbDef[nDefCode];
-	if(pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	if(pView->m_mgrReelmap && pView->m_mgrReelmap->m_pPcsRgn)
+		pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	//if(pDoc->m_Master[0].m_pPcsRgn)
+	//	pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
 	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMapInner->m_sKorDef[nDefCode], nStrip+'A', nCol+1, nRow+1);
 #else
  	int nPcrIdx = pDoc->GetPcrIdx0(m_nSerial);
@@ -1906,8 +1908,10 @@ void CDlgMenu06::ShowDefInfoUp(int nIdx) // nIdx : 0 ~ 11 (12ea)
 	int nPcsIdx = pDoc->m_pPcrInner[0][nPcrIdx]->m_pDefPcs[m_nIdxDef[0]]; //m_pImg[m_nIdxDef];
 	nDefCode = pDoc->m_pPcrInner[0][nPcrIdx]->m_pDefType[m_nIdxDef[0]];
  	rgbDef = pDoc->m_pReelMapInner->m_rgbDef[nDefCode];	
-	if(pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
+	if(pView->m_mgrReelmap->m_pPcsRgn)
+		pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	//if(pDoc->m_Master[0].m_pPcsRgn)
+	//	pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
 	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMapInner->m_sKorDef[nDefCode], nStrip+'A', nCol+1, nRow+1);
 #endif
 	myStcDefInfo[nIdx].SetText(str);
@@ -1939,8 +1943,10 @@ void CDlgMenu06::ShowDefInfoDn(int nIdx) // nIdx : 0 ~ 11 (12ea)
 	int nPcsIdx = pDoc->m_pPcrInner[1][nPcrIdx]->m_pDefPcs[m_nIdxDef[1]]; //m_pImg[m_nIdxDef];
 	nDefCode = pDoc->m_pPcrInner[1][nPcrIdx]->m_pDefType[m_nIdxDef[1]];
 	rgbDef = pDoc->m_pReelMapInner->m_rgbDef[nDefCode];
-	if(pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
+	if(pView->m_mgrReelmap->m_pPcsRgn)
+		pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	//if(pDoc->m_Master[0].m_pPcsRgn)
+	//	pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
 	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMapInner->m_sKorDef[nDefCode], nStrip+'A', nCol+1, nRow+1);
 #else
  	int nPcrIdx = pDoc->GetPcrIdx1(m_nSerial);
@@ -1957,8 +1963,10 @@ void CDlgMenu06::ShowDefInfoDn(int nIdx) // nIdx : 0 ~ 11 (12ea)
 	int nPcsIdx = pDoc->m_pPcrInner[1][nPcrIdx]->m_pDefPcs[m_nIdxDef[1]]; //m_pImg[m_nIdxDef];
 	nDefCode = pDoc->m_pPcrInner[1][nPcrIdx]->m_pDefType[m_nIdxDef[1]];
 	rgbDef = pDoc->m_pReelMapInner->m_rgbDef[nDefCode];	
-	if(pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
+	if(pView->m_mgrReelmap->m_pPcsRgn)
+		pView->m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	//if(pDoc->m_Master[0].m_pPcsRgn)
+	//	pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);	
 	str.Format(_T("%s\r\n%c - %d, %d"), pDoc->m_pReelMapInner->m_sKorDef[nDefCode], nStrip+'A', nCol+1, nRow+1);
 #endif
 	myStcDefInfo[MENU01_STC_DEFINFO_HARF+nIdx].SetText(str);

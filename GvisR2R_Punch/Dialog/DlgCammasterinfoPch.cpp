@@ -111,8 +111,11 @@ BOOL CDlgCammasterinfoPch::OnInitDialog()
 
 	CString sPath, sCamSpecLoc, sModel, sLayer;
 	sCamSpecLoc = pDoc->WorkingInfo.System.sPathCamSpecDir;
-	sModel = pDoc->m_Master[0].GetModel();
-	sLayer = pDoc->m_Master[0].GetLayer();
+	//sModel = pDoc->m_Master[0].GetModel();
+	//sLayer = pDoc->m_Master[0].GetLayer();
+	sModel = pDoc->WorkingInfo.CurrModel.sModel;
+	sLayer = pDoc->WorkingInfo.CurrModel.sLayerUp;
+
 
 	if (sCamSpecLoc.Right(1) != "\\")
 		sPath.Format(_T("%s\\%s\\%s.pch"), sCamSpecLoc, sModel, sLayer);

@@ -855,7 +855,8 @@ void CGvisR2R_PunchView::OnTimer(UINT_PTR nIDEvent)
 				{
 					if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 					{
-						if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+						//if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+						if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
 						{
 							if (m_pDlgMenu06)
 								m_pDlgMenu06->RedrawWindow();
@@ -1009,7 +1010,8 @@ void CGvisR2R_PunchView::OnTimer(UINT_PTR nIDEvent)
 					{
 						if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
 						{
-							if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+							//if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+							if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
 							{
 								if (m_pDlgMenu06)
 								{
@@ -1705,12 +1707,12 @@ BOOL CGvisR2R_PunchView::InitAct()
 
 
 		CfPoint ptPnt0(dX[0], dY[0]);
-		if (pDoc->m_Master[0].m_pPcsRgn)
-			pDoc->m_Master[0].m_pPcsRgn->SetPinPos(0, ptPnt0);
+		if (m_mgrReelmap->m_pPcsRgn)
+			m_mgrReelmap->m_pPcsRgn->SetPinPos(0, ptPnt0);
 
 		CfPoint ptPnt1(dX[1], dY[1]);
-		if (pDoc->m_Master[0].m_pPcsRgn)
-			pDoc->m_Master[0].m_pPcsRgn->SetPinPos(1, ptPnt1);
+		if (m_mgrReelmap->m_pPcsRgn)
+			m_mgrReelmap->m_pPcsRgn->SetPinPos(1, ptPnt1);
 
 		if (pDoc->m_pSpecLocal)
 		{
@@ -2904,7 +2906,7 @@ UINT CGvisR2R_PunchView::ThreadProc0(LPVOID lpContext)	// DoMark0(), DoMark1()
 		{
 			bLock = TRUE;
 #ifndef TEST_MODE
-			if (pDoc->m_Master[0].MasterInfo.nActionCode == 1 || pDoc->m_Master[0].MasterInfo.nActionCode == 3)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+			if (m_mgrReelmap->m_pMasterInfo->nActionCode == 1 || m_mgrReelmap->m_pMasterInfo->nActionCode == 3)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 			{
 				if (pThread->m_bTHREAD_MK[0])
 				{
@@ -11593,7 +11595,7 @@ void CGvisR2R_PunchView::ClrMkInfo()
 		{
 			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
 			{
-				if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+				if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
 				{
 					if (m_pDlgMenu06)
 					{
@@ -11607,6 +11609,35 @@ void CGvisR2R_PunchView::ClrMkInfo()
 	}
 
 	UpdateWorking();
+}
+
+void CGvisR2R_PunchView::ModelChange()
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	pDoc->SetModelInfoUp();
+	pView->OpenReelmapUp(); // At Start...
+	pView->SetPathAtBufUp();
+	pDoc->m_pSpecLocal->MakeDir(pDoc->Status.PcrShare[0].sModel, pDoc->Status.PcrShare[0].sLayer);
+
+	if (bDualTest)
+	{
+		pDoc->SetModelInfoDn();
+		pView->OpenReelmapDn(); // At Start...
+		pView->SetPathAtBufDn();
+		pDoc->m_pSpecLocal->MakeDir(pDoc->Status.PcrShare[1].sModel, pDoc->Status.PcrShare[1].sLayer);
+	}
+
+	if (pView->m_pDlgMenu01)
+	{
+		pView->m_pDlgMenu01->UpdateData();
+	}
+
+
+	if (pDoc->GetTestMode() == MODE_OUTER)
+	{
+		OpenReelmapInner();
+	}
 }
 
 void CGvisR2R_PunchView::ModelChange(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn 
@@ -11643,6 +11674,110 @@ void CGvisR2R_PunchView::ModelChange(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn
 	}
 }
 
+void CGvisR2R_PunchView::ResetMkInfo() // AOI-UpDn
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	BOOL bDualTestInner, bGetCurrentInfoEng;
+	CString sLot, sLayerUp, sLayerDn;
+	bGetCurrentInfoEng = GetCurrentInfoEng();
+
+	// CamMst Info...
+	pDoc->GetCamPxlRes();
+
+	m_bDrawGL_Menu01 = FALSE;
+	if (m_pDlgMenu01)
+		m_pDlgMenu01->ResetMkInfo();
+
+	if (bGetCurrentInfoEng)
+	{
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+			{
+				if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+				{
+					if (!bDualTestInner)
+					{
+						m_bDrawGL_Menu06 = FALSE;
+						if (m_pDlgMenu06)
+							m_pDlgMenu06->ResetMkInfo();
+					}
+				}
+			}
+		}
+	}
+
+	m_mgrReelmap->LoadMstInfo();
+	InitReelmapUp();
+	InitReelmapDn();
+
+	if (bGetCurrentInfoEng)
+	{
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+			{
+				if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+				{
+					InitReelmapInnerUp();
+					if (bDualTestInner)
+						InitReelmapInnerDn();
+				}
+			}
+		}
+	}
+
+	OpenReelmap();
+	SetAlignPosUp();
+	SetAlignPosDn();
+
+	if (m_pDlgMenu02)
+	{
+		m_pDlgMenu02->ChgModelUp();
+
+		if (bDualTest)
+			m_pDlgMenu02->ChgModelDn();
+	}
+
+	if (m_pDlgMenu01)
+	{
+		m_pDlgMenu01->InitCadImgUp();
+		if (bDualTest)
+			m_pDlgMenu01->InitCadImgDn();
+	}
+
+	if (bGetCurrentInfoEng)
+	{
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+			{
+				if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+				{
+					if (m_pDlgMenu06)
+					{
+						m_pDlgMenu06->InitCadImgUp();
+						if (bDualTestInner)
+							m_pDlgMenu06->InitCadImgDn();
+
+						m_pDlgMenu06->InitGL();
+						m_bDrawGL_Menu06 = TRUE;
+						m_pDlgMenu06->RefreshRmap();
+					}
+
+				}
+			}
+		}
+	}
+
+	if (m_pDlgMenu01)
+	{
+		m_pDlgMenu01->InitGL();
+		m_bDrawGL_Menu01 = TRUE;
+		m_pDlgMenu01->RefreshRmap();
+	}
+}
+
 void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
@@ -11668,7 +11803,7 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			{
 				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
 				{
-					if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+					if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
 					{
 						if (!bDualTestInner)
 						{
@@ -11681,54 +11816,55 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			}
 		}
 
-		if (IsLastJob(0)) // Up
-		{
-			pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->WorkingInfo.CurrModel.sModel,
-				pDoc->WorkingInfo.CurrModel.sLayerUp);
-			pDoc->m_Master[0].LoadMstInfo();
-			//pDoc->m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
-
-			if (m_pEngrave)
-				m_pEngrave->SwMenu01UpdateWorking(TRUE);
-
-			if (bGetCurrentInfoEng)
-			{
-				if (pDoc->GetTestMode() == MODE_OUTER)
-				{
-					if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-					{
-						if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
-						{
-							pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-								pDoc->WorkingInfo.CurrModel.sModel,
-								sLayerUp);
-							pDoc->m_MasterInner[0].LoadMstInfo();
-							//pDoc->m_MasterInner[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->m_sEngLotNum);
-
-							if (bDualTestInner)
-							{
-								//GetCurrentInfoEng();
-								pDoc->m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-									pDoc->WorkingInfo.CurrModel.sModel,
-									sLayerDn);
-								pDoc->m_MasterInner[1].LoadMstInfo();
-
-								m_bDrawGL_Menu06 = FALSE;
-								if (m_pDlgMenu06)
-									m_pDlgMenu06->ResetMkInfo();
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			pView->ClrDispMsg();
-			AfxMessageBox(_T("Error - IsLastJob(0)..."));
-		}
-
+		//if (IsLastJob(0)) // Up
+		//{
+		//	//m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//	//	pDoc->WorkingInfo.CurrModel.sModel,
+		//	//	pDoc->WorkingInfo.CurrModel.sLayerUp);
+		//	m_mgrReelmap->LoadMstInfo();
+		//	//m_mgrReelmap->WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
+		//
+		//	if (m_pEngrave)
+		//		m_pEngrave->SwMenu01UpdateWorking(TRUE);
+		//
+		//	//if (bGetCurrentInfoEng)
+		//	//{
+		//	//	if (pDoc->GetTestMode() == MODE_OUTER)
+		//	//	{
+		//	//		if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+		//	//		{
+		//	//			if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+		//	//			{
+		//	//				pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//	//					pDoc->WorkingInfo.CurrModel.sModel,
+		//	//					sLayerUp);
+		//	//				pDoc->m_MasterInner[0].LoadMstInfo();
+		//	//				//pDoc->m_MasterInner[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->m_sEngLotNum);
+		//	//
+		//	//				if (bDualTestInner)
+		//	//				{
+		//	//					//GetCurrentInfoEng();
+		//	//					pDoc->m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//	//						pDoc->WorkingInfo.CurrModel.sModel,
+		//	//						sLayerDn);
+		//	//					pDoc->m_MasterInner[1].LoadMstInfo();
+		//	//
+		//	//					m_bDrawGL_Menu06 = FALSE;
+		//	//					if (m_pDlgMenu06)
+		//	//						m_pDlgMenu06->ResetMkInfo();
+		//	//				}
+		//	//			}
+		//	//		}
+		//	//	}
+		//	//}
+		//}
+		//else
+		//{
+		//	pView->ClrDispMsg();
+		//	AfxMessageBox(_T("Error - IsLastJob(0)..."));
+		//}
+		
+		m_mgrReelmap->LoadMstInfo();
 		InitReelmapUp();
 
 		if (bGetCurrentInfoEng)
@@ -11737,7 +11873,7 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			{
 				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 				{
-					if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+					if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
 					{
 						InitReelmapInnerUp();
 						if (bDualTestInner)
@@ -11776,7 +11912,7 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 			{
 				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 				{
-					if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+					if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
 					{
 						if (m_pDlgMenu06)
 						{
@@ -11815,21 +11951,22 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 				m_pDlgMenu01->ResetMkInfo();
 
 			//ResetReelmap();
+			//
+			//if (IsLastJob(1)) // Dn
+			//{
+			//	pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+			//		pDoc->WorkingInfo.CurrModel.sModel,
+			//		pDoc->WorkingInfo.CurrModel.sLayerDn,
+			//		pDoc->WorkingInfo.CurrModel.sLayerUp);
+			//
+			//	pDoc->m_Master[1].LoadMstInfo();
+			//}
+			//else
+			//{
+			//	AfxMessageBox(_T("Error - IsLastJob(1)..."));
+			//}
 
-			if (IsLastJob(1)) // Dn
-			{
-				pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-					pDoc->WorkingInfo.CurrModel.sModel,
-					pDoc->WorkingInfo.CurrModel.sLayerDn,
-					pDoc->WorkingInfo.CurrModel.sLayerUp);
-
-				pDoc->m_Master[1].LoadMstInfo();
-			}
-			else
-			{
-				AfxMessageBox(_T("Error - IsLastJob(1)..."));
-			}
-
+			m_mgrReelmap->LoadMstInfo();
 			InitReelmapDn();
 			SetAlignPosDn();
 
@@ -11847,7 +11984,7 @@ void CGvisR2R_PunchView::ResetMkInfo(int nAoi) // 0 : AOI-Up , 1 : AOI-Dn , 2 : 
 						{
 							if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 							{
-								if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
+								if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, sLayerUp))
 								{
 									if (m_pDlgMenu06)
 									{
@@ -11886,15 +12023,15 @@ void CGvisR2R_PunchView::SetAlignPos()
 {
 	if (m_pMotion)
 	{
-		m_pMotion->m_dAlignPosX[0][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
-		m_pMotion->m_dAlignPosX[0][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
+		m_pMotion->m_dAlignPosX[0][0] = m_mgrReelmap->m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
+		m_pMotion->m_dAlignPosY[0][0] = m_mgrReelmap->m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
+		m_pMotion->m_dAlignPosX[0][1] = m_mgrReelmap->m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
+		m_pMotion->m_dAlignPosY[0][1] = m_mgrReelmap->m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
 
-		m_pMotion->m_dAlignPosX[1][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
-		m_pMotion->m_dAlignPosX[1][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
+		m_pMotion->m_dAlignPosX[1][0] = m_mgrReelmap->m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
+		m_pMotion->m_dAlignPosY[1][0] = m_mgrReelmap->m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
+		m_pMotion->m_dAlignPosX[1][1] = m_mgrReelmap->m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
+		m_pMotion->m_dAlignPosY[1][1] = m_mgrReelmap->m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
 	}
 }
 
@@ -11902,10 +12039,10 @@ void CGvisR2R_PunchView::SetAlignPosUp()
 {
 	if (m_pMotion)
 	{
-		m_pMotion->m_dAlignPosX[0][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
-		m_pMotion->m_dAlignPosX[0][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
-		m_pMotion->m_dAlignPosY[0][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
+		m_pMotion->m_dAlignPosX[0][0] = m_mgrReelmap->m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[0];
+		m_pMotion->m_dAlignPosY[0][0] = m_mgrReelmap->m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[0];
+		m_pMotion->m_dAlignPosX[0][1] = m_mgrReelmap->m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[0];
+		m_pMotion->m_dAlignPosY[0][1] = m_mgrReelmap->m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[0];
 	}
 }
 
@@ -11913,10 +12050,10 @@ void CGvisR2R_PunchView::SetAlignPosDn()
 {
 	if (m_pMotion)
 	{
-		m_pMotion->m_dAlignPosX[1][0] = pDoc->m_Master[0].m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][0] = pDoc->m_Master[0].m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
-		m_pMotion->m_dAlignPosX[1][1] = pDoc->m_Master[0].m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
-		m_pMotion->m_dAlignPosY[1][1] = pDoc->m_Master[0].m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
+		m_pMotion->m_dAlignPosX[1][0] = m_mgrReelmap->m_stAlignMk.X0 + pView->m_pMotion->m_dPinPosX[1];
+		m_pMotion->m_dAlignPosY[1][0] = m_mgrReelmap->m_stAlignMk.Y0 + pView->m_pMotion->m_dPinPosY[1];
+		m_pMotion->m_dAlignPosX[1][1] = m_mgrReelmap->m_stAlignMk.X1 + pView->m_pMotion->m_dPinPosX[1];
+		m_pMotion->m_dAlignPosY[1][1] = m_mgrReelmap->m_stAlignMk.Y1 + pView->m_pMotion->m_dPinPosY[1];
 	}
 }
 
@@ -12484,8 +12621,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt(int nIdx)	// CamMaster의 피스순서 인덱스
 	ptPnt.y = -1.0;
 
 #ifndef TEST_MODE
-	if (pDoc->m_Master[0].m_pPcsRgn)
-		ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt(nIdx); // CamMaster의 피스순서 인덱스
+	if (m_mgrReelmap->m_pPcsRgn)
+		ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt(nIdx); // CamMaster의 피스순서 인덱스
 #else
 	ptPnt.x = 1.0;
 	ptPnt.y = 1.0;
@@ -12501,8 +12638,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0(int nIdx)	// CamMaster의 피스순서 인덱스
 	ptPnt.y = -1.0;
 
 #ifndef TEST_MODE
-	if (pDoc->m_Master[0].m_pPcsRgn)
-		ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nIdx); // CamMaster의 피스순서 인덱스
+	if (m_mgrReelmap->m_pPcsRgn)
+		ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nIdx); // CamMaster의 피스순서 인덱스
 #else
 	ptPnt.x = 1.0;
 	ptPnt.y = 1.0;
@@ -12518,8 +12655,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt1(int nIdx) // CamMaster의 피스순서 인덱스
 	ptPnt.y = -1.0;
 
 #ifndef TEST_MODE
-	if (pDoc->m_Master[0].m_pPcsRgn)
-		ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nIdx); // CamMaster의 피스순서 인덱스
+	if (m_mgrReelmap->m_pPcsRgn)
+		ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nIdx); // CamMaster의 피스순서 인덱스
 #else
 	ptPnt.x = 1.0;
 	ptPnt.y = 1.0;
@@ -12557,8 +12694,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0(int nSerial, int nMkPcs) // pcr 시리얼, pc
 					if (pDoc->m_pPcr[2][nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcr[2][nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
+						if (m_mgrReelmap->m_pPcsRgn)
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
 					}
 				}
 			}
@@ -12575,8 +12712,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0(int nSerial, int nMkPcs) // pcr 시리얼, pc
 					if (pDoc->m_pPcr[0][nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcr[0][nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
+						if (m_mgrReelmap->m_pPcsRgn)
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
 					}
 				}
 			}
@@ -12592,8 +12729,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0(int nSerial, int nMkPcs) // pcr 시리얼, pc
 
 int CGvisR2R_PunchView::GetMkStripIdx0(int nDefPcsId) // 0 : Fail , 1~4 : Strip Idx
 {
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / 4);
 	int nStripIdx = 0; 
 
@@ -12616,8 +12753,8 @@ int CGvisR2R_PunchView::GetMkStripIdx0(int nDefPcsId) // 0 : Fail , 1~4 : Strip 
 
 int CGvisR2R_PunchView::GetMkStripIdx1(int nDefPcsId) // 0 : Fail , 1~4 : Strip Idx
 {
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / 4);
 	int nStripIdx = 0;
 
@@ -12663,8 +12800,8 @@ CString CGvisR2R_PunchView::GetMkInfo0(int nSerial, int nMkPcs) // return Cam0 :
 		nDefCode = pDoc->m_pPcr[0][nPcrIdx]->m_pDefType[nMkPcs];
 	}
 
-	if (pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	if (m_mgrReelmap->m_pPcsRgn)
+		m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
 
 	sInfo.Format(_T("%04d_%c_%d_%d"), nSerial, nStrip + 'A', nCol + 1, nRow + 1);
 
@@ -12695,8 +12832,8 @@ CString CGvisR2R_PunchView::GetMkInfo1(int nSerial, int nMkPcs) // return Cam1 :
 		nPcsIdx = pDoc->m_pPcr[0][nPcrIdx]->m_pDefPcs[nMkPcs];
 		nDefCode = pDoc->m_pPcr[0][nPcrIdx]->m_pDefType[nMkPcs];
 	}
-	if (pDoc->m_Master[0].m_pPcsRgn)
-		pDoc->m_Master[0].m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
+	if (m_mgrReelmap->m_pPcsRgn)
+		m_mgrReelmap->m_pPcsRgn->GetMkMatrix(nPcsIdx, nStrip, nCol, nRow);
 
 	sInfo.Format(_T("%04d_%c_%d_%d"), nSerial, nStrip + 'A', nCol + 1, nRow + 1);
 
@@ -12714,8 +12851,8 @@ int CGvisR2R_PunchView::GetMkStripIdx0(int nSerial, int nMkPcs) // 0 : Fail , 1~
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nIdx = pDoc->GetPcrIdx0(nSerial);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / MAX_STRIP_NUM);
 	int nStripIdx = 0;
 
@@ -12799,9 +12936,9 @@ CfPoint CGvisR2R_PunchView::GetMkPnt1(int nSerial, int nMkPcs)
 					if (pDoc->m_pPcr[2][nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcr[2][nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
+						if (m_mgrReelmap->m_pPcsRgn)
 						{
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
 						}
 					}
 				}
@@ -12819,9 +12956,9 @@ CfPoint CGvisR2R_PunchView::GetMkPnt1(int nSerial, int nMkPcs)
 					if (pDoc->m_pPcr[0][nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcr[0][nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
+						if (m_mgrReelmap->m_pPcsRgn)
 						{
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
 						}
 					}
 				}
@@ -12847,8 +12984,8 @@ int CGvisR2R_PunchView::GetMkStripIdx1(int nSerial, int nMkPcs) // 0 : Fail , 1~
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nIdx = pDoc->GetPcrIdx1(nSerial);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / MAX_STRIP_NUM);
 	int nStripIdx = 0;
 
@@ -13316,168 +13453,260 @@ void CGvisR2R_PunchView::InitReelmapDn()
 	}
 }
 
-BOOL CGvisR2R_PunchView::LoadMstInfo()
+BOOL CGvisR2R_PunchView::LoadMstInfo() // Reelmap 초기화
 {
-	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
-	CString sLot, sLayerUp, sLayerDn;
-	BOOL bDualTestInner, bGetCurrentInfoEng;
-
-	bGetCurrentInfoEng = GetCurrentInfoEng(); // TRUE: MODE_INNER or MODE_OUTER
-	pDoc->GetCamPxlRes();
-
-	if (IsLastJob(0)) // Up
+	BOOL bRtn = FALSE;
+	if (m_mgrReelmap)
 	{
+		bRtn = m_mgrReelmap->LoadMstInfo();
+
+		BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+		CString sLot, sLayerUp, sLayerDn;
+		BOOL bDualTestInner;
+		
+		SetAlignPos();
+		
+		// Reelmap 정보 Loading.....
+		m_mgrReelmap->InitReelmap(); // Delete & New
+		
+		BOOL bGetCurrentInfoEng = pDoc->GetCurrentInfoEng(); // TRUE: MODE_INNER or MODE_OUTER
+
 		if (bGetCurrentInfoEng)
 		{
-			pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->m_sEngModel,
-				pDoc->m_sEngLayerUp);
-			pDoc->m_Master[0].LoadMstInfo();
-
-			if (pDoc->GetTestMode() == MODE_OUTER)
-			{
-				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
-				{
-					if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
-					{
-						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->m_sEngModel,
-							sLayerUp);
-						pDoc->m_MasterInner[0].LoadMstInfo();
-					}
-				}
-			}
-		}
-		else
-		{
-			pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->WorkingInfo.CurrModel.sModel,
-				pDoc->WorkingInfo.CurrModel.sLayerUp);
-			pDoc->m_Master[0].LoadMstInfo();
-			//pDoc->m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
-		}
-	}
-
-	if (IsLastJob(1)) // Dn
-	{
-		if (bGetCurrentInfoEng)
-		{
-			pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->m_sEngModel,
-				pDoc->m_sEngLayerDn,
-				pDoc->m_sEngLayerUp);
-
-			pDoc->m_Master[1].LoadMstInfo();
-			
 			if (pDoc->GetTestMode() == MODE_OUTER)
 			{
 				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
 				{
-					if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
+					if (m_mgrReelmap->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
 					{
-						pDoc->m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->m_sEngModel,
-							sLayerDn,
-							sLayerUp);
-						pDoc->m_MasterInner[1].LoadMstInfo();
+						// Reelmap 정보 Loading.....
+						m_mgrReelmap->InitReelmapInner(); // Delete & New
+		
+						if (m_pDlgMenu06)
+						{
+							m_pDlgMenu06->InitGL();
+							m_pDlgMenu06->RefreshRmap();
+							m_pDlgMenu06->InitCadImg();
+							m_pDlgMenu06->SetPnlNum();
+							m_pDlgMenu06->SetPnlDefNum();
+		
+							if (bDualTestInner)
+								m_pDlgMenu06->SelMap(ALL);
+							else
+								m_pDlgMenu06->SelMap(UP);
+						}
+					}
+					else
+					{
+						MsgBox(_T("InitReelmapInner()를 위한 GetItsSerialInfo의 정보가 없습니다.")); // syd-20231127
+						return FALSE;
 					}
 				}
 			}
 		}
-		else
+		
+		if (m_pDlgMenu01)
 		{
-			pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->WorkingInfo.CurrModel.sModel,
-				pDoc->WorkingInfo.CurrModel.sLayerDn,
-				pDoc->WorkingInfo.CurrModel.sLayerUp);
-
-			pDoc->m_Master[1].LoadMstInfo();
+			m_pDlgMenu01->InitGL();
+			m_bDrawGL_Menu01 = TRUE;
+			m_pDlgMenu01->RefreshRmap();
+			m_pDlgMenu01->InitCadImg();
+			m_pDlgMenu01->SetPnlNum();
+			m_pDlgMenu01->SetPnlDefNum();
 		}
-	}
-
-	SetAlignPos();
-
-	// Reelmap 정보 Loading.....
-	InitReelmap(); // Delete & New
-
-	if (bGetCurrentInfoEng)
-	{
-		if (pDoc->GetTestMode() == MODE_OUTER)
+		
+		if (m_pDlgMenu02)
 		{
-			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-			{
-				if (pDoc->m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
-				{
-					// Reelmap 정보 Loading.....
-					InitReelmapInner(); // Delete & New
-
-					if (m_pDlgMenu06)
-					{
-						m_pDlgMenu06->InitGL();
-						m_pDlgMenu06->RefreshRmap();
-						m_pDlgMenu06->InitCadImg();
-						m_pDlgMenu06->SetPnlNum();
-						m_pDlgMenu06->SetPnlDefNum();
-
-						if (bDualTestInner)
-							m_pDlgMenu06->SelMap(ALL);
-						else
-							m_pDlgMenu06->SelMap(UP);
-					}
-				}
-				else
-				{
-					MsgBox(_T("InitReelmapInner()를 위한 GetItsSerialInfo의 정보가 없습니다.")); // syd-20231127
-					return FALSE;
-				}
-			}
+			m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
+			m_pDlgMenu02->InitCadImg();
 		}
+	#ifndef TEST_MODE
+		if (m_pDlgMenu01)
+			m_pDlgMenu01->RedrawWindow();
+		
+		DispMsg(_T("릴맵을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+		OpenReelmap();
+	#endif
+		m_mgrReelmap->SetPathAtBuf(); // Reelmap path를 설정함.
+		//LoadPcrFromBuf();
+		
+		int nSrl = pDoc->GetLastShotMk();
+		SetMkFdLen();
+		if (nSrl >= 0)
+		{
+			if (bDualTest)
+				m_pDlgMenu01->SelMap(ALL);
+			else
+				m_pDlgMenu01->SelMap(UP);
+		}
+		
+		return TRUE;
 	}
 
-	if (m_pDlgMenu01)
-	{
-		m_pDlgMenu01->InitGL();
-		m_bDrawGL_Menu01 = TRUE;
-		m_pDlgMenu01->RefreshRmap();
-		m_pDlgMenu01->InitCadImg();
-		m_pDlgMenu01->SetPnlNum();
-		m_pDlgMenu01->SetPnlDefNum();
-	}
-
-	if (m_pDlgMenu02)
-	{
-		m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
-		m_pDlgMenu02->InitCadImg();
-	}
-#ifndef TEST_MODE
-	if (m_pDlgMenu01)
-		m_pDlgMenu01->RedrawWindow();
-
-	DispMsg(_T("릴맵을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
-	OpenReelmap();
-#endif
-	SetPathAtBuf(); // Reelmap path를 설정함.
-	//LoadPcrFromBuf();
-
-	int nSrl = pDoc->GetLastShotMk();
-	SetMkFdLen();
-	if (nSrl >= 0)
-	{
-		if (bDualTest)
-			m_pDlgMenu01->SelMap(ALL);
-		else
-			m_pDlgMenu01->SelMap(UP);
-	}
-
-	//if (m_pDlgMenu01)
-	//{
-	//	m_pDlgMenu01->InitGL();
-	//	m_pDlgMenu01->SetPnlNum();
-	//	m_pDlgMenu01->SetPnlDefNum();
-	//}
-
-	return TRUE;
+	return bRtn;
 }
+//BOOL CGvisR2R_PunchView::LoadMstInfo()
+//{
+//	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+//	CString sLot, sLayerUp, sLayerDn;
+//	BOOL bDualTestInner, bGetCurrentInfoEng;
+//
+//	bGetCurrentInfoEng = GetCurrentInfoEng(); // TRUE: MODE_INNER or MODE_OUTER
+//	pDoc->GetCamPxlRes();
+//
+//	if (IsLastJob(0)) // Up
+//	{
+//		if (bGetCurrentInfoEng)
+//		{
+//			m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//				pDoc->m_sEngModel,
+//				pDoc->m_sEngLayerUp);
+//			m_mgrReelmap->LoadMstInfo();
+//
+//			if (pDoc->GetTestMode() == MODE_OUTER)
+//			{
+//				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+//				{
+//					if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+//					{
+//						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//							pDoc->m_sEngModel,
+//							sLayerUp);
+//						pDoc->m_MasterInner[0].LoadMstInfo();
+//					}
+//				}
+//			}
+//		}
+//		else
+//		{
+//			m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//				pDoc->WorkingInfo.CurrModel.sModel,
+//				pDoc->WorkingInfo.CurrModel.sLayerUp);
+//			m_mgrReelmap->LoadMstInfo();
+//			//m_mgrReelmap->WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
+//		}
+//	}
+//
+//	if (IsLastJob(1)) // Dn
+//	{
+//		if (bGetCurrentInfoEng)
+//		{
+//			pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//				pDoc->m_sEngModel,
+//				pDoc->m_sEngLayerDn,
+//				pDoc->m_sEngLayerUp);
+//
+//			pDoc->m_Master[1].LoadMstInfo();
+//			
+//			if (pDoc->GetTestMode() == MODE_OUTER)
+//			{
+//				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+//				{
+//					if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
+//					{
+//						pDoc->m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//							pDoc->m_sEngModel,
+//							sLayerDn,
+//							sLayerUp);
+//						pDoc->m_MasterInner[1].LoadMstInfo();
+//					}
+//				}
+//			}
+//		}
+//		else
+//		{
+//			pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+//				pDoc->WorkingInfo.CurrModel.sModel,
+//				pDoc->WorkingInfo.CurrModel.sLayerDn,
+//				pDoc->WorkingInfo.CurrModel.sLayerUp);
+//
+//			pDoc->m_Master[1].LoadMstInfo();
+//		}
+//	}
+//
+//	SetAlignPos();
+//
+//	// Reelmap 정보 Loading.....
+//	InitReelmap(); // Delete & New
+//
+//	if (bGetCurrentInfoEng)
+//	{
+//		if (pDoc->GetTestMode() == MODE_OUTER)
+//		{
+//			if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+//			{
+//				if (m_mgrReelmap->IsMstInnerSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+//				{
+//					// Reelmap 정보 Loading.....
+//					InitReelmapInner(); // Delete & New
+//
+//					if (m_pDlgMenu06)
+//					{
+//						m_pDlgMenu06->InitGL();
+//						m_pDlgMenu06->RefreshRmap();
+//						m_pDlgMenu06->InitCadImg();
+//						m_pDlgMenu06->SetPnlNum();
+//						m_pDlgMenu06->SetPnlDefNum();
+//
+//						if (bDualTestInner)
+//							m_pDlgMenu06->SelMap(ALL);
+//						else
+//							m_pDlgMenu06->SelMap(UP);
+//					}
+//				}
+//				else
+//				{
+//					MsgBox(_T("InitReelmapInner()를 위한 GetItsSerialInfo의 정보가 없습니다.")); // syd-20231127
+//					return FALSE;
+//				}
+//			}
+//		}
+//	}
+//
+//	if (m_pDlgMenu01)
+//	{
+//		m_pDlgMenu01->InitGL();
+//		m_bDrawGL_Menu01 = TRUE;
+//		m_pDlgMenu01->RefreshRmap();
+//		m_pDlgMenu01->InitCadImg();
+//		m_pDlgMenu01->SetPnlNum();
+//		m_pDlgMenu01->SetPnlDefNum();
+//	}
+//
+//	if (m_pDlgMenu02)
+//	{
+//		m_pDlgMenu02->ChgModelUp(); // PinImg, AlignImg를 Display함.
+//		m_pDlgMenu02->InitCadImg();
+//	}
+//#ifndef TEST_MODE
+//	if (m_pDlgMenu01)
+//		m_pDlgMenu01->RedrawWindow();
+//
+//	DispMsg(_T("릴맵을 초기화합니다."), _T("알림"), RGB_GREEN, DELAY_TIME_MSG);
+//	OpenReelmap();
+//#endif
+//	SetPathAtBuf(); // Reelmap path를 설정함.
+//	//LoadPcrFromBuf();
+//
+//	int nSrl = pDoc->GetLastShotMk();
+//	SetMkFdLen();
+//	if (nSrl >= 0)
+//	{
+//		if (bDualTest)
+//			m_pDlgMenu01->SelMap(ALL);
+//		else
+//			m_pDlgMenu01->SelMap(UP);
+//	}
+//
+//	//if (m_pDlgMenu01)
+//	//{
+//	//	m_pDlgMenu01->InitGL();
+//	//	m_pDlgMenu01->SetPnlNum();
+//	//	m_pDlgMenu01->SetPnlDefNum();
+//	//}
+//
+//	return TRUE;
+//}
 
 BOOL CGvisR2R_PunchView::IsPinMkData()
 {
@@ -14153,8 +14382,8 @@ BOOL CGvisR2R_PunchView::IsFixPcsUp(int nSerial)
 
 	if (pDoc->m_pReelMapUp->IsFixPcs(nSerial, pCol, pRow, nTot, bCont))
 	{
-		int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-		int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+		int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+		int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 		int nStPcsY = nNodeY / MAX_STRIP_NUM;
 
 		if(bCont)
@@ -14208,8 +14437,8 @@ BOOL CGvisR2R_PunchView::IsFixPcsDn(int nSerial)
 
 	if (pDoc->m_pReelMapDn->IsFixPcs(nSerial, pCol, pRow, nTot, bCont))
 	{
-		int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-		int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+		int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+		int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 		int nStPcsY = nNodeY / MAX_STRIP_NUM;
 
 		if (bCont)
@@ -14512,7 +14741,7 @@ void CGvisR2R_PunchView::DoReject0()
 		m_nStepMk[2]++;
 		break;
 	case 1:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)
 		{
 			m_nStepMk[2]++;
 		}
@@ -14525,7 +14754,7 @@ void CGvisR2R_PunchView::DoReject0()
 		m_nStepMk[2]++;
 		break;
 	case 3:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			ptPnt = GetMkPnt0(m_nMkPcs[2]);
 
@@ -14701,7 +14930,7 @@ void CGvisR2R_PunchView::DoReject0()
 		m_nStepMk[2]++;
 		break;
 	case 13:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			m_nStepMk[2] = 3; pDoc->SetStatusInt(_T("General"), _T("nStepMk[2]"), m_nStepMk[2]);
 		}
@@ -14779,7 +15008,7 @@ void CGvisR2R_PunchView::DoReject1()
 		m_nStepMk[3]++;
 		break;
 	case 1:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)
 		{
 			m_nStepMk[3]++;
 		}
@@ -14792,7 +15021,7 @@ void CGvisR2R_PunchView::DoReject1()
 		m_nStepMk[3]++;
 		break;
 	case 3:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			ptPnt = GetMkPnt1(m_nMkPcs[3]);
 
@@ -14964,7 +15193,7 @@ void CGvisR2R_PunchView::DoReject1()
 		m_nStepMk[3]++;
 		break;
 	case 13:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			m_nStepMk[3] = 3; pDoc->SetStatusInt(_T("General"), _T("nStepMk[3]"), m_nStepMk[3]);
 		}
@@ -15032,7 +15261,7 @@ void CGvisR2R_PunchView::DoMark0All()
 		m_nStepMk[2]++;
 		break;
 	case 1:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)
 		{
 			m_nStepMk[2]++;
 		}
@@ -15045,7 +15274,7 @@ void CGvisR2R_PunchView::DoMark0All()
 		m_nStepMk[2]++;
 		break;
 	case 3:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			ptPnt = GetMkPnt0(m_nMkPcs[2]);
 
@@ -15119,7 +15348,7 @@ void CGvisR2R_PunchView::DoMark0All()
 		m_nStepMk[2]++;
 		break;
 	case 8:
-		if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			m_nStepMk[2] = 3; pDoc->SetStatusInt(_T("General"), _T("nStepMk[2]"), m_nStepMk[2]);
 		}
@@ -15185,7 +15414,7 @@ void CGvisR2R_PunchView::DoMark1All()
 		m_nStepMk[3]++;
 		break;
 	case 1:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)
 		{
 			m_nStepMk[3]++;
 		}
@@ -15198,7 +15427,7 @@ void CGvisR2R_PunchView::DoMark1All()
 		m_nStepMk[3]++;
 		break;
 	case 3:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			ptPnt = GetMkPnt1(m_nMkPcs[3]);
 
@@ -15272,7 +15501,7 @@ void CGvisR2R_PunchView::DoMark1All()
 		m_nStepMk[3]++;
 		break;
 	case 8:
-		if (m_nMkPcs[3] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+		if (m_nMkPcs[3] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		{
 			m_nStepMk[3] = 3; pDoc->SetStatusInt(_T("General"), _T("nStepMk[3]"), m_nStepMk[3]);
 		}
@@ -15289,7 +15518,7 @@ void CGvisR2R_PunchView::DoMark1All()
 	case 101:
 		if (!WaitDelay1(1))		// F:Done, T:On Waiting....
 		{
-			if (m_nMkPcs[2] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)
+			if (m_nMkPcs[2] < m_mgrReelmap->m_pPcsRgn->nTotPcs)
 			{
 				if (m_nMkPcs[2] > 0)
 				{
@@ -15348,7 +15577,7 @@ void CGvisR2R_PunchView::DoMark0()
 	int nSerial, nIdx, nErrCode, nRtn;
 	CfPoint ptPnt;
 	CString sMsg;
-	double dStripOut = (pDoc->m_Master[0].m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
+	double dStripOut = (m_mgrReelmap->m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
 	int nStripOut = int(dStripOut);
 	if (dStripOut > nStripOut)
 		nStripOut++;			// 스트립 양폐 비율
@@ -15977,7 +16206,7 @@ void CGvisR2R_PunchView::DoMark1()
 	int nSerial, nIdx, nErrCode, nRtn;
 	CfPoint ptPnt;
 	CString sMsg;
-	double dStripOut = (pDoc->m_Master[0].m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
+	double dStripOut = (m_mgrReelmap->m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
 	int nStripOut = int(dStripOut);
 	if (dStripOut > nStripOut)
 		nStripOut++;
@@ -18000,10 +18229,10 @@ void CGvisR2R_PunchView::DoAutoChkShareVsFolder()	// 잔량처리 시 계속적으로 반복
 			//
 			//	if (IsLastJob(0)) // Up
 			//	{
-			//		pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+			//		m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 			//			pDoc->WorkingInfo.CurrModel.sModel,
 			//			pDoc->WorkingInfo.CurrModel.sLayerUp);
-			//		pDoc->m_Master[0].LoadMstInfo();
+			//		m_mgrReelmap->LoadMstInfo();
 			//
 			//		if (m_pEngrave)
 			//			m_pEngrave->SwMenu01UpdateWorking(TRUE);
@@ -18038,7 +18267,7 @@ void CGvisR2R_PunchView::DoAutoChkShareVsFolder()	// 잔량처리 시 계속적으로 반복
 			//
 			//	InitReelmap();
 			//
-			//	if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+			//	if (m_mgrReelmap->IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
 			//		InitReelmapInner();	
 			//
 			//	ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
@@ -18871,58 +19100,49 @@ void CGvisR2R_PunchView::DoAutoChkShareFolder()	// 20170727-잔량처리 시 계속적으
 				ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
 
 				pDoc->GetCamPxlRes();
+				m_mgrReelmap->LoadMstInfo();
 
-				if (IsLastJob(0)) // Up
-				{
-					pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-						pDoc->WorkingInfo.CurrModel.sModel,
-						pDoc->WorkingInfo.CurrModel.sLayerUp);
-					pDoc->m_Master[0].LoadMstInfo();
-					//pDoc->m_Master[0].WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
-
-
-					if (m_pEngrave)
-						m_pEngrave->SwMenu01UpdateWorking(TRUE);
-
-
-					if (pDoc->GetTestMode() == MODE_OUTER)
-					{
-						//GetCurrentInfoEng();
-						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->WorkingInfo.CurrModel.sModel,
-							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-						pDoc->m_MasterInner[0].LoadMstInfo();
-					}
-				}
-
-				if (IsLastJob(1)) // Dn
-				{
-					pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-						pDoc->WorkingInfo.LastJob.sModel,
-						pDoc->WorkingInfo.CurrModel.sLayerDn,
-						pDoc->WorkingInfo.CurrModel.sLayerUp);
-					pDoc->m_Master[1].LoadMstInfo();
-
-					if (pDoc->GetTestMode() == MODE_OUTER)
-					{
-						//GetCurrentInfoEng();
-						pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->WorkingInfo.CurrModel.sModel,
-							pDoc->WorkingInfo.LastJob.sInnerLayerDn,
-							pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-						pDoc->m_MasterInner[0].LoadMstInfo();
-					}
-				}
+				//if (IsLastJob(0)) // Up
+				//{
+				//	//m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				//	//	pDoc->WorkingInfo.CurrModel.sModel,
+				//	//	pDoc->WorkingInfo.CurrModel.sLayerUp);
+				//	m_mgrReelmap->LoadMstInfo();
+				//	//m_mgrReelmap->WriteStripPieceRegion_Text(pDoc->WorkingInfo.System.sPathOldFile, pDoc->WorkingInfo.CurrModel.sLot);
+				//	if (m_pEngrave)
+				//		m_pEngrave->SwMenu01UpdateWorking(TRUE);
+				//	//if (pDoc->GetTestMode() == MODE_OUTER)
+				//	//{
+				//	//	//GetCurrentInfoEng();
+				//	//	pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				//	//		pDoc->WorkingInfo.CurrModel.sModel,
+				//	//		pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+				//	//	pDoc->m_MasterInner[0].LoadMstInfo();
+				//	//}
+				//}
+				//if (IsLastJob(1)) // Dn
+				//{
+				//	pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				//		pDoc->WorkingInfo.LastJob.sModel,
+				//		pDoc->WorkingInfo.CurrModel.sLayerDn,
+				//		pDoc->WorkingInfo.CurrModel.sLayerUp);
+				//	pDoc->m_Master[1].LoadMstInfo();
+				//	if (pDoc->GetTestMode() == MODE_OUTER)
+				//	{
+				//		//GetCurrentInfoEng();
+				//		pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+				//			pDoc->WorkingInfo.CurrModel.sModel,
+				//			pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+				//			pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+				//		pDoc->m_MasterInner[0].LoadMstInfo();
+				//	}
+				//}
 
 				SetAlignPos();
+				InitReelmap();
 
-				// 20220502 - end
-				InitReelmap();	// 20220421
-
-
-				if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+				if (m_mgrReelmap->IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
 					InitReelmapInner();	// 20220421
-
 
 				ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
 
@@ -23737,7 +23957,7 @@ void CGvisR2R_PunchView::SetPriority()
 
 	// Cam0 : m_bPriority[0], m_bPriority[3]
 	// Cam1 : m_bPriority[1], m_bPriority[2]
-	if (pDoc->m_Master[0].MasterInfo.nActionCode == 1 || pDoc->m_Master[0].MasterInfo.nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
+	if (m_mgrReelmap->m_pMasterInfo->nActionCode == 1 || m_mgrReelmap->m_pMasterInfo->nActionCode == 3) // 1 : 좌우 미러 , 3 : 180 회전
 	{
 		if (nDir[0] < 0) // Cam0 <-
 		{
@@ -24952,13 +25172,13 @@ BOOL CGvisR2R_PunchView::MoveAlign0(int nPos)
 		double pPos[2];
 		if (nPos == 0)
 		{
-			pPos[0] = pDoc->m_Master[0].m_stAlignMk.X0 + m_pMotion->m_dPinPosX[0];
-			pPos[1] = pDoc->m_Master[0].m_stAlignMk.Y0 + m_pMotion->m_dPinPosY[0];
+			pPos[0] = m_mgrReelmap->m_stAlignMk.X0 + m_pMotion->m_dPinPosX[0];
+			pPos[1] = m_mgrReelmap->m_stAlignMk.Y0 + m_pMotion->m_dPinPosY[0];
 		}
 		else if (nPos == 1)
 		{
-			pPos[0] = pDoc->m_Master[0].m_stAlignMk.X1 + m_pMotion->m_dPinPosX[0];
-			pPos[1] = pDoc->m_Master[0].m_stAlignMk.Y1 + m_pMotion->m_dPinPosY[0];
+			pPos[0] = m_mgrReelmap->m_stAlignMk.X1 + m_pMotion->m_dPinPosX[0];
+			pPos[1] = m_mgrReelmap->m_stAlignMk.Y1 + m_pMotion->m_dPinPosY[0];
 		}
 
 		if (ChkCollision(AXIS_X0, pPos[0]))
@@ -25002,13 +25222,13 @@ BOOL CGvisR2R_PunchView::MoveAlign1(int nPos)
 		double pPos[2];
 		if (nPos == 0)
 		{
-			pPos[0] = pDoc->m_Master[0].m_stAlignMk.X0 + m_pMotion->m_dPinPosX[1];
-			pPos[1] = pDoc->m_Master[0].m_stAlignMk.Y0 + m_pMotion->m_dPinPosY[1];
+			pPos[0] = m_mgrReelmap->m_stAlignMk.X0 + m_pMotion->m_dPinPosX[1];
+			pPos[1] = m_mgrReelmap->m_stAlignMk.Y0 + m_pMotion->m_dPinPosY[1];
 		}
 		else if (nPos == 1)
 		{
-			pPos[0] = pDoc->m_Master[0].m_stAlignMk.X1 + m_pMotion->m_dPinPosX[1];
-			pPos[1] = pDoc->m_Master[0].m_stAlignMk.Y1 + m_pMotion->m_dPinPosY[1];
+			pPos[0] = m_mgrReelmap->m_stAlignMk.X1 + m_pMotion->m_dPinPosX[1];
+			pPos[1] = m_mgrReelmap->m_stAlignMk.Y1 + m_pMotion->m_dPinPosY[1];
 		}
 
 		if (ChkCollision(AXIS_X1, pPos[0]))
@@ -26445,7 +26665,7 @@ void CGvisR2R_PunchView::CntMk()
 
 BOOL CGvisR2R_PunchView::IsOnMarking0()
 {
-	if (m_nMkPcs[0] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+	if (m_nMkPcs[0] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		return TRUE;
 
 	return FALSE;
@@ -26453,7 +26673,7 @@ BOOL CGvisR2R_PunchView::IsOnMarking0()
 
 BOOL CGvisR2R_PunchView::IsOnMarking1()
 {
-	if (m_nMkPcs[1] < pDoc->m_Master[0].m_pPcsRgn->nTotPcs)	// 마킹완료Check
+	if (m_nMkPcs[1] < m_mgrReelmap->m_pPcsRgn->nTotPcs)	// 마킹완료Check
 		return TRUE;
 
 	return FALSE;
@@ -28137,7 +28357,7 @@ void CGvisR2R_PunchView::DoMark0Its()
 	int nSerial, nIdx, nErrCode, nRtn;
 	CfPoint ptPnt;
 	CString sMsg;
-	double dStripOut = (pDoc->m_Master[0].m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
+	double dStripOut = (m_mgrReelmap->m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
 	int nStripOut = int(dStripOut);
 	if (dStripOut > nStripOut)
 		nStripOut++;			// 스트립 양폐 비율
@@ -28716,7 +28936,7 @@ void CGvisR2R_PunchView::DoMark1Its()
 	int nSerial, nIdx, nErrCode, nRtn;
 	CfPoint ptPnt;
 	CString sMsg;
-	double dStripOut = (pDoc->m_Master[0].m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
+	double dStripOut = (m_mgrReelmap->m_pPcsRgn->nTotPcs / MAX_STRIP_NUM) * _tstof(pDoc->WorkingInfo.LastJob.sStripOutRatio) / 100.0;
 	int nStripOut = int(dStripOut);
 	if (dStripOut > nStripOut)
 		nStripOut++;
@@ -29648,8 +29868,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0Its(int nSerial, int nMkPcs) // pcr 시리얼,
 					if (pDoc->m_pPcrIts[nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
+						if (m_mgrReelmap->m_pPcsRgn)
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
 					}
 				}
 			}
@@ -29666,8 +29886,8 @@ CfPoint CGvisR2R_PunchView::GetMkPnt0Its(int nSerial, int nMkPcs) // pcr 시리얼,
 					if (pDoc->m_pPcrIts[nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
+						if (m_mgrReelmap->m_pPcsRgn)
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nDefPcsId); // Cam0의 Mk 포인트.
 					}
 				}
 			}
@@ -29709,9 +29929,9 @@ CfPoint CGvisR2R_PunchView::GetMkPnt1Its(int nSerial, int nMkPcs)
 					if (pDoc->m_pPcrIts[nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
+						if (m_mgrReelmap->m_pPcsRgn)
 						{
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
 						}
 					}
 				}
@@ -29729,9 +29949,9 @@ CfPoint CGvisR2R_PunchView::GetMkPnt1Its(int nSerial, int nMkPcs)
 					if (pDoc->m_pPcrIts[nIdx]->m_pMk[nMkPcs] != -2) // -2 (NoMarking)
 					{
 						nDefPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[nMkPcs];
-						if (pDoc->m_Master[0].m_pPcsRgn)
+						if (m_mgrReelmap->m_pPcsRgn)
 						{
-							ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
+							ptPnt = m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nDefPcsId); // Cam1의 Mk 포인트.
 						}
 					}
 				}
@@ -29757,8 +29977,8 @@ int CGvisR2R_PunchView::GetMkStripIdx0Its(int nSerial, int nMkPcs) // 0 : Fail ,
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nIdx = pDoc->GetPcrIdx0(nSerial);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / MAX_STRIP_NUM);
 	int nStripIdx = 0;
 
@@ -29825,8 +30045,8 @@ int CGvisR2R_PunchView::GetMkStripIdx1Its(int nSerial, int nMkPcs) // 0 : Fail ,
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 	int nIdx = pDoc->GetPcrIdx1(nSerial);
-	int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
-	int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
+	int nNodeX = m_mgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = m_mgrReelmap->m_pPcsRgn->nRow;
 	int nStripY = int(nNodeY / MAX_STRIP_NUM);
 	int nStripIdx = 0;
 
@@ -32029,12 +32249,12 @@ BOOL CGvisR2R_PunchView::RemakeReelmapFromPcr(CString sModel, CString sLot, CStr
 
 	//if (pDoc->m_pReelMapUp)
 	//	pDoc->m_pReelMapUp->StartThreadRemakeReelmapFromPcr();
-
+	//
 	//if (bDualTest)
 	//{
 	//	if (pDoc->m_pReelMapDn)
 	//		pDoc->m_pReelMapDn->StartThreadRemakeReelmapFromPcr();
-
+	//
 	//	if (pDoc->m_pReelMapAllUp)
 	//		pDoc->m_pReelMapAllUp->StartThreadRemakeReelmapFromPcr();
 	//}
@@ -32158,8 +32378,7 @@ BOOL CGvisR2R_PunchView::RemakeReelmapFromPcr(CString sModel, CString sLot, CStr
 			sRmapDnPath.Delete(nPos, sRmapDnPath.GetLength() - nPos);
 		}
 
-
-		ResetMkInfo(2); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn
+		ResetMkInfo(); // CAD 데이터 리로딩
 	}
 	else
 	{
@@ -32298,7 +32517,7 @@ BOOL CGvisR2R_PunchView::ChangeModel(int nSerial)
 	//WorkingInfo.CurrModel.sLot = WorkingInfo.NextModel.sLot;
 	//WorkingInfo.CurrModel.sLayerUp = WorkingInfo.NextModel.sLayerUp;
 	//WorkingInfo.CurrModel.sLayerDn = WorkingInfo.NextModel.sLayerDn;
-
+	//
 	//WriteChangedModel(); // ::WritePrivateProfileString(_T("Last Job"), _T("Model Name")
 
 	if (pView->m_pDlgMenu01)
@@ -32347,53 +32566,53 @@ BOOL CGvisR2R_PunchView::ChangeModel(int nSerial)
 
 	m_bNewModel = TRUE;
 	InitInfo();
-	ResetMkInfo(0); // 0 : AOI-Up , 1 : AOI-Dn , 2 : AOI-UpDn	
+	ResetMkInfo(); // CAD 데이터 리로딩	
 
 	pDoc->GetCamPxlRes();
-
-	if (IsLastJob(0)) // Up
-	{
-		pDoc->m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-			pDoc->WorkingInfo.LastJob.sModel,
-			pDoc->WorkingInfo.LastJob.sLayerUp);
-		pDoc->m_Master[0].LoadMstInfo();
-
-		if (m_pEngrave)
-			m_pEngrave->SwMenu01UpdateWorking(TRUE);
-
-
-		if (pDoc->GetTestMode() == MODE_OUTER)
-		{
-			pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->WorkingInfo.LastJob.sModel,
-				pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-			pDoc->m_MasterInner[0].LoadMstInfo();
-		}
-	}
-
-	if (IsLastJob(1)) // Dn
-	{
-		pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-			pDoc->WorkingInfo.LastJob.sModel,
-			pDoc->WorkingInfo.LastJob.sLayerDn,
-			pDoc->WorkingInfo.LastJob.sLayerUp);
-		pDoc->m_Master[1].LoadMstInfo();
-
-		if (pDoc->GetTestMode() == MODE_OUTER)
-		{
-			pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->WorkingInfo.LastJob.sModel,
-				pDoc->WorkingInfo.LastJob.sInnerLayerDn,
-				pDoc->WorkingInfo.LastJob.sInnerLayerUp);
-			pDoc->m_MasterInner[0].LoadMstInfo();
-		}
-	}
+	m_mgrReelmap->LoadMstInfo();
+	//if (IsLastJob(0)) // Up
+	//{
+	//	m_mgrReelmap->Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+	//		pDoc->WorkingInfo.LastJob.sModel,
+	//		pDoc->WorkingInfo.LastJob.sLayerUp);
+	//	m_mgrReelmap->LoadMstInfo();
+	//
+	//	if (m_pEngrave)
+	//		m_pEngrave->SwMenu01UpdateWorking(TRUE);
+	//
+	//
+	//	if (pDoc->GetTestMode() == MODE_OUTER)
+	//	{
+	//		pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+	//			pDoc->WorkingInfo.LastJob.sModel,
+	//			pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+	//		pDoc->m_MasterInner[0].LoadMstInfo();
+	//	}
+	//}
+	//
+	//if (IsLastJob(1)) // Dn
+	//{
+	//	pDoc->m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+	//		pDoc->WorkingInfo.LastJob.sModel,
+	//		pDoc->WorkingInfo.LastJob.sLayerDn,
+	//		pDoc->WorkingInfo.LastJob.sLayerUp);
+	//	pDoc->m_Master[1].LoadMstInfo();
+	//
+	//	if (pDoc->GetTestMode() == MODE_OUTER)
+	//	{
+	//		pDoc->m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+	//			pDoc->WorkingInfo.LastJob.sModel,
+	//			pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+	//			pDoc->WorkingInfo.LastJob.sInnerLayerUp);
+	//		pDoc->m_MasterInner[0].LoadMstInfo();
+	//	}
+	//}
 
 	SetAlignPos();
 
 	InitReelmap();
 
-	if (pDoc->m_Master[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
+	if (m_mgrReelmap->IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->WorkingInfo.LastJob.sModel, pDoc->WorkingInfo.LastJob.sInnerLayerUp))
 		InitReelmapInner();
 
 	ModelChange(0); // 0 : AOI-Up , 1 : AOI-Dn
