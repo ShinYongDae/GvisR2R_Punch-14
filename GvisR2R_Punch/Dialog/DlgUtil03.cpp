@@ -202,8 +202,8 @@ void CDlgUtil03::OnShowWindow(BOOL bShow, UINT nStatus)
 
 void CDlgUtil03::AtDlgShow()
 {
-	if(pView->m_mgrReelmap->m_pPcsRgn)
-		SetScrlBarMax(pView->m_mgrReelmap->m_pPcsRgn->nCol, pView->m_mgrReelmap->m_pPcsRgn->nRow); // ROT_NONE
+	if(pView->m_pMgrReelmap->m_pPcsRgn)
+		SetScrlBarMax(pView->m_pMgrReelmap->m_pPcsRgn->nCol, pView->m_pMgrReelmap->m_pPcsRgn->nRow); // ROT_NONE
 	//if(pDoc->m_Master[0].m_pPcsRgn)
 	//	SetScrlBarMax(pDoc->m_Master[0].m_pPcsRgn->nCol, pDoc->m_Master[0].m_pPcsRgn->nRow); // ROT_NONE
 	SetScrlBar(0,0);
@@ -252,8 +252,8 @@ BOOL CDlgUtil03::OnInitDialog()
 	InitStc();
 	InitBtn();
 
-	if(pView->m_mgrReelmap->m_pPcsRgn)
-		SetScrlBarMax(pView->m_mgrReelmap->m_pPcsRgn->nCol, pView->m_mgrReelmap->m_pPcsRgn->nRow); // ROT_NONE
+	if(pView->m_pMgrReelmap->m_pPcsRgn)
+		SetScrlBarMax(pView->m_pMgrReelmap->m_pPcsRgn->nCol, pView->m_pMgrReelmap->m_pPcsRgn->nRow); // ROT_NONE
 	//if(pDoc->m_Master[0].m_pPcsRgn)
 	//	SetScrlBarMax(pDoc->m_Master[0].m_pPcsRgn->nCol, pDoc->m_Master[0].m_pPcsRgn->nRow); // ROT_NONE
 // 	SetScrlBarMax(pDoc->m_pPcsRgn->nRow, pDoc->m_pPcsRgn->nCol); // ROT_CCW_90
@@ -401,7 +401,7 @@ void CDlgUtil03::InitStc()
 
 void CDlgUtil03::Disp(int nDir)
 {
-	if (!pView->m_mgrReelmap || !pView->m_mgrReelmap->m_pPcsRgn) return;
+	if (!pView->m_pMgrReelmap || !pView->m_pMgrReelmap->m_pPcsRgn) return;
 
 	//if(!pDoc->m_Master[0].m_pPcsRgn)
 	//	return;
@@ -426,8 +426,8 @@ void CDlgUtil03::Disp(int nDir)
 			{
 				if(!bChk)
 				{
-					if (pView->m_mgrReelmap->m_pPcsRgn)
-						pView->m_mgrReelmap->m_pPcsRgn->GetMkPnt(nC + nScrlH, nR + nScrlV, nP, ptMk);
+					if (pView->m_pMgrReelmap->m_pPcsRgn)
+						pView->m_pMgrReelmap->m_pPcsRgn->GetMkPnt(nC + nScrlH, nR + nScrlV, nP, ptMk);
 					//if (pDoc->m_Master[0].m_pPcsRgn)
 					//	pDoc->m_Master[0].m_pPcsRgn->GetMkPnt(nC + nScrlH, nR + nScrlV, nP, ptMk);
 					str = _T("");
@@ -440,15 +440,15 @@ void CDlgUtil03::Disp(int nDir)
 				{
 					if (!bChk2) // 상면 PCS
 					{
-						if (pView->m_mgrReelmap->m_pPcsRgn)
-							pView->m_mgrReelmap->m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
+						if (pView->m_pMgrReelmap->m_pPcsRgn)
+							pView->m_pMgrReelmap->m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
 						//if (pDoc->m_Master[0].m_pPcsRgn)
 						//	pDoc->m_Master[0].m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
 					}
 					else		// 하면 PCS
 					{
-						if (pView->m_mgrReelmap->m_pPcsRgn)
-							pView->m_mgrReelmap->m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
+						if (pView->m_pMgrReelmap->m_pPcsRgn)
+							pView->m_pMgrReelmap->m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
 						//if (pDoc->m_Master[1].m_pPcsRgn)
 						//	pDoc->m_Master[1].m_pPcsRgn->GetPcsRgn(nC + nScrlH, nR + nScrlV, nP, ptRect);
 					}
@@ -524,8 +524,8 @@ void CDlgUtil03::MoveMkPos(int nStcId)
 		str = myStcData[nStcId].GetText();
 		nPos = str.Find('(', 0);
 		nPcsId = _tstoi(str.Left(nPos));
-		if(pView->m_mgrReelmap->m_pPcsRgn)
-			ptPnt = pView->m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nPcsId);
+		if(pView->m_pMgrReelmap->m_pPcsRgn)
+			ptPnt = pView->m_pMgrReelmap->m_pPcsRgn->GetMkPnt0(nPcsId);
 		//if(pDoc->m_Master[0].m_pPcsRgn)
 		//	ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nPcsId);
 
@@ -548,8 +548,8 @@ void CDlgUtil03::MoveMkPos(int nStcId)
 		str = myStcData[nStcId].GetText();
 		nPos = str.Find('(', 0);
 		nPcsId = _tstoi(str.Left(nPos));
-		if(pView->m_mgrReelmap->m_pPcsRgn)
-			ptPnt = pView->m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nPcsId);
+		if(pView->m_pMgrReelmap->m_pPcsRgn)
+			ptPnt = pView->m_pMgrReelmap->m_pPcsRgn->GetMkPnt1(nPcsId);
 		//if(pDoc->m_Master[0].m_pPcsRgn)
 		//	ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nPcsId);
 
@@ -572,8 +572,8 @@ void CDlgUtil03::MoveMkPos(int nStcId)
 		str = myStcData[nStcId].GetText();
 		nPos = str.Find('(', 0);
 		nPcsId = _tstoi(str.Left(nPos));
-		if(pView->m_mgrReelmap->m_pPcsRgn)
-			ptPnt = pView->m_mgrReelmap->m_pPcsRgn->GetMkPnt0(nPcsId);
+		if(pView->m_pMgrReelmap->m_pPcsRgn)
+			ptPnt = pView->m_pMgrReelmap->m_pPcsRgn->GetMkPnt0(nPcsId);
 		//if(pDoc->m_Master[0].m_pPcsRgn)
 		//	ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt0(nPcsId);
 
@@ -593,8 +593,8 @@ void CDlgUtil03::MoveMkPos(int nStcId)
 
 		nPos = str.Find('(', 0);
 		nPcsId = _tstoi(str.Left(nPos));
-		if(pView->m_mgrReelmap->m_pPcsRgn)
-			ptPnt = pView->m_mgrReelmap->m_pPcsRgn->GetMkPnt1(nPcsId);
+		if(pView->m_pMgrReelmap->m_pPcsRgn)
+			ptPnt = pView->m_pMgrReelmap->m_pPcsRgn->GetMkPnt1(nPcsId);
 		//if(pDoc->m_Master[0].m_pPcsRgn)
 		//	ptPnt = pDoc->m_Master[0].m_pPcsRgn->GetMkPnt1(nPcsId);
 

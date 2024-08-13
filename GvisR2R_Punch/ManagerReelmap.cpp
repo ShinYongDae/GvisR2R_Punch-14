@@ -14,8 +14,21 @@ extern CGvisR2R_PunchView* pView;
 
 CManagerReelmap::CManagerReelmap(CWnd* pParent)
 {
+	int i = 0, k = 0;
+
 	m_pParent = pParent;
 	m_bThreadAliveFinalCopyItsFiles = FALSE;
+
+	for (i = 0; i < MAX_PCR; i++)
+	{
+		for (k = 0; k < MAX_PCR_PNL; k++)
+		{
+			m_pPcr[i][k] = NULL;
+			m_pPcrInner[i][k] = NULL;
+		}
+	}
+	for (k = 0; k < MAX_PCR_PNL; k++)
+		m_pPcrIts[k] = NULL;
 
 	Reset();
 	Init();
@@ -26,16 +39,18 @@ CManagerReelmap::CManagerReelmap(CWnd* pParent)
 	}
 }
 
-
 CManagerReelmap::~CManagerReelmap()
 {
 	m_bThreadAliveFinalCopyItsFiles = FALSE;
+
+	FreeReelmap();
+	FreePcr();
+
 }
 
 BEGIN_MESSAGE_MAP(CManagerReelmap, CWnd)
 	ON_WM_TIMER()
 END_MESSAGE_MAP()
-
 
 BOOL CManagerReelmap::Create()
 {
@@ -215,6 +230,7 @@ void CManagerReelmap::Init()
 		m_stPcsMk[i].Y = 0.0;
 	}
 
+	InitPcr();
 	LoadConfig();
 }
 
@@ -240,6 +256,100 @@ BOOL CManagerReelmap::InitAct()
 {
 
 	return TRUE;
+}
+
+void CManagerReelmap::InitPcr()
+{
+	int k, i;
+	for (i = 0; i < MAX_PCR; i++)
+	{
+		for (k = 0; k < MAX_PCR_PNL; k++)
+		{
+			if (m_pPcr[i][k])
+			{
+				delete m_pPcr[i][k];
+				m_pPcr[i][k] = NULL;
+			}
+
+			m_pPcr[i][k] = new CDataMarking();
+
+			if (m_pPcrInner[i][k])
+			{
+				delete m_pPcrInner[i][k];
+				m_pPcrInner[i][k] = NULL;
+			}
+
+			m_pPcrInner[i][k] = new CDataMarking();
+		}
+	}
+
+	for (k = 0; k < MAX_PCR_PNL; k++)
+	{
+		if (m_pPcrIts[k])
+		{
+			delete m_pPcrIts[k];
+			m_pPcrIts[k] = NULL;
+		}
+
+		m_pPcrIts[k] = new CDataMarking();
+	}
+}
+
+void CManagerReelmap::ClrPcr()
+{
+	//CString sMsg;
+
+	int nIdx, i, k;
+	for (i = 0; i < MAX_PCR; i++)
+	{
+		for (nIdx = 0; nIdx < MAX_PCR_PNL; nIdx++)
+		{
+			if (m_pPcr[i][0])
+			{
+				m_pPcr[i][nIdx]->m_nIdx = -1;							// m_nIdx : From 0 to nTot.....
+				m_pPcr[i][nIdx]->m_nSerial = 0;
+				m_pPcr[i][nIdx]->m_nErrPnl = 0;
+				m_pPcr[i][nIdx]->m_sModel = _T("");
+				m_pPcr[i][nIdx]->m_sLayer = _T("");
+				m_pPcr[i][nIdx]->m_sLot = _T("");
+
+				m_pPcr[i][nIdx]->m_nCamId = 0;
+				m_pPcr[i][nIdx]->m_nTotDef = 0;
+				m_pPcr[i][nIdx]->m_nTotRealDef = 0;
+			}
+
+			if (m_pPcrInner[i][0])
+			{
+				m_pPcrInner[i][nIdx]->m_nIdx = -1;							// m_nIdx : From 0 to nTot.....
+				m_pPcrInner[i][nIdx]->m_nSerial = 0;
+				m_pPcrInner[i][nIdx]->m_nErrPnl = 0;
+				m_pPcrInner[i][nIdx]->m_sModel = _T("");
+				m_pPcrInner[i][nIdx]->m_sLayer = _T("");
+				m_pPcrInner[i][nIdx]->m_sLot = _T("");
+
+				m_pPcrInner[i][nIdx]->m_nCamId = 0;
+				m_pPcrInner[i][nIdx]->m_nTotDef = 0;
+				m_pPcrInner[i][nIdx]->m_nTotRealDef = 0;
+			}
+		}
+	}
+
+	for (k = 0; k < MAX_PCR_PNL; k++)
+	{
+		if (m_pPcrIts[k])
+		{
+			m_pPcrIts[k]->m_nIdx = -1;							// m_nIdx : From 0 to nTot.....
+			m_pPcrIts[k]->m_nSerial = 0;
+			m_pPcrIts[k]->m_nErrPnl = 0;
+			m_pPcrIts[k]->m_sModel = _T("");
+			m_pPcrIts[k]->m_sLayer = _T("");
+			m_pPcrIts[k]->m_sLot = _T("");
+
+			m_pPcrIts[k]->m_nCamId = 0;
+			m_pPcrIts[k]->m_nTotDef = 0;
+			m_pPcrIts[k]->m_nTotRealDef = 0;
+		}
+	}
 }
 
 void CManagerReelmap::LoadConfig()
@@ -309,10 +419,8 @@ void CManagerReelmap::SetRgbDef(int nDef, COLORREF rgbVal)
 		m_pReelMapUp->m_rgbDef[nDef] = rgbVal;
 	if (m_pReelMapDn)
 		m_pReelMapDn->m_rgbDef[nDef] = rgbVal;
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->m_rgbDef[nDef] = rgbVal;
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->m_rgbDef[nDef] = rgbVal;
+	if (m_pReelMapAll)
+		m_pReelMapAll->m_rgbDef[nDef] = rgbVal;
 }
 
 void CManagerReelmap::SetRgbBackGround(int nRed, int nGreen, int nBlue)
@@ -333,17 +441,11 @@ void CManagerReelmap::SetRgbBackGround(int nRed, int nGreen, int nBlue)
 		m_pReelMapDn->m_nBkColor[1] = nGreen;
 		m_pReelMapDn->m_nBkColor[2] = nBlue;
 	}
-	if (m_pReelMapAllUp)
+	if (m_pReelMapAll)
 	{
-		m_pReelMapAllUp->m_nBkColor[0] = nRed;
-		m_pReelMapAllUp->m_nBkColor[1] = nGreen;
-		m_pReelMapAllUp->m_nBkColor[2] = nBlue;
-	}
-	if (m_pReelMapAllDn)
-	{
-		m_pReelMapAllDn->m_nBkColor[0] = nRed;
-		m_pReelMapAllDn->m_nBkColor[1] = nGreen;
-		m_pReelMapAllDn->m_nBkColor[2] = nBlue;
+		m_pReelMapAll->m_nBkColor[0] = nRed;
+		m_pReelMapAll->m_nBkColor[1] = nGreen;
+		m_pReelMapAll->m_nBkColor[2] = nBlue;
 	}
 }
 
@@ -360,10 +462,8 @@ void CManagerReelmap::ClrFixPcs()
 	{
 		if (m_pReelMapDn)
 			m_pReelMapDn->ClrFixPcs();
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->ClrFixPcs();
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->ClrFixPcs();
+		if (m_pReelMapAll)
+			m_pReelMapAll->ClrFixPcs();
 	}
 
 	if (pDoc->GetTestMode() == MODE_OUTER)
@@ -375,10 +475,8 @@ void CManagerReelmap::ClrFixPcs()
 		{
 			if (m_pReelMapInnerDn)
 				m_pReelMapInnerDn->ClrFixPcs();
-			if (m_pReelMapInnerAllUp)
-				m_pReelMapInnerAllUp->ClrFixPcs();
-			if (m_pReelMapInnerAllDn)
-				m_pReelMapInnerAllDn->ClrFixPcs();
+			if (m_pReelMapInnerAll)
+				m_pReelMapInnerAll->ClrFixPcs();
 		}
 	}
 }
@@ -394,10 +492,8 @@ void CManagerReelmap::RestoreReelmap()
 	{
 		if (m_pReelMapDn)
 			m_pReelMapDn->RestoreReelmap();
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->RestoreReelmap();
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->RestoreReelmap();
+		if (m_pReelMapAll)
+			m_pReelMapAll->RestoreReelmap();
 	}
 }
 
@@ -407,7 +503,7 @@ BOOL CManagerReelmap::ReloadReelmap()
 	BOOL bDualTestInner = pDoc->WorkingInfo.LastJob.bDualTestInner;
 
 
-	BOOL bRtn[5] = { 1 };
+	BOOL bRtn[4] = { 1 };
 	int nSt = 0;
 
 	if (m_pReelMapUp)
@@ -418,11 +514,8 @@ BOOL CManagerReelmap::ReloadReelmap()
 		if (m_pReelMapDn)
 			bRtn[2] = m_pReelMapDn->ReloadReelmap();
 
-		if (m_pReelMapAllUp)
-			bRtn[3] = m_pReelMapAllUp->ReloadReelmap();
-
-		if (m_pReelMapAllDn)
-			bRtn[4] = m_pReelMapAllDn->ReloadReelmap();
+		if (m_pReelMapAll)
+			bRtn[3] = m_pReelMapAll->ReloadReelmap();
 	}
 
 	if (pDoc->GetTestMode() == MODE_OUTER)
@@ -432,7 +525,7 @@ BOOL CManagerReelmap::ReloadReelmap()
 	else
 		nSt = 1;
 
-	for (int i = nSt; i < 5; i++)
+	for (int i = nSt; i < 4; i++)
 	{
 		if (!bRtn[i])
 		{
@@ -447,8 +540,8 @@ BOOL CManagerReelmap::ReloadReelmap()
 	sVal.Format(_T("On Reloading Reelmap."));
 	dlg.Create(sVal);
 
-	int nRatio[5] = { 0 };
-	BOOL bDone[5] = { 0 };
+	int nRatio[4] = { 0 };
+	BOOL bDone[4] = { 0 };
 	int nTo = 0;
 	if (bDualTest)
 	{
@@ -528,8 +621,8 @@ BOOL CManagerReelmap::IsDoneReloadReelmap(int& nProc)
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
-	int nRatio[5] = { 0 };
-	BOOL bDone[5] = { 0 };
+	int nRatio[4] = { 0 };
+	BOOL bDone[4] = { 0 };
 
 	if (m_pReelMapUp)
 	{
@@ -548,26 +641,18 @@ BOOL CManagerReelmap::IsDoneReloadReelmap(int& nProc)
 		}
 		else
 			bDone[2] = TRUE;
-		if (m_pReelMapAllUp)
+		if (m_pReelMapAll)
 		{
-			nRatio[3] = m_pReelMapAllUp->GetProgressReloadReelmap();
-			bDone[3] = m_pReelMapAllUp->IsDoneReloadReelmap();
+			nRatio[3] = m_pReelMapAll->GetProgressReloadReelmap();
+			bDone[3] = m_pReelMapAll->IsDoneReloadReelmap();
 		}
 		else
 			bDone[3] = TRUE;
-
-		if (m_pReelMapAllDn)
-		{
-			nRatio[4] = m_pReelMapAllDn->GetProgressReloadReelmap();
-			bDone[4] = m_pReelMapAllDn->IsDoneReloadReelmap();
-		}
-		else
-			bDone[4] = TRUE;
 	}
 
-	nProc = nRatio[1] + nRatio[2] + nRatio[3] + nRatio[4];
+	nProc = nRatio[1] + nRatio[2] + nRatio[3];
 
-	if (bDone[1] && bDone[2] && bDone[3] && bDone[4])
+	if (bDone[1] && bDone[2] && bDone[3])
 		return TRUE;
 
 	return FALSE;
@@ -584,10 +669,10 @@ void CManagerReelmap::ReloadReelmapUp()
 		m_pReelMapUp->ReloadReelmap();
 }
 
-void CManagerReelmap::ReloadReelmapAllUp()
+void CManagerReelmap::ReloadReelmapAll()
 {
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->ReloadReelmap();
+	if (m_pReelMapAll)
+		m_pReelMapAll->ReloadReelmap();
 }
 
 void CManagerReelmap::ReloadReelmapDn()
@@ -596,22 +681,16 @@ void CManagerReelmap::ReloadReelmapDn()
 		m_pReelMapDn->ReloadReelmap();
 }
 
-void CManagerReelmap::ReloadReelmapAllDn()
-{
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->ReloadReelmap();
-}
-
 void CManagerReelmap::ReloadReelmapUpInner()
 {
 	if (m_pReelMapInnerUp)
 		m_pReelMapInnerUp->ReloadReelmap();
 }
 
-void CManagerReelmap::ReloadReelmapAllUpInner()
+void CManagerReelmap::ReloadReelmapAllInner()
 {
-	if (m_pReelMapInnerAllUp)
-		m_pReelMapInnerAllUp->ReloadReelmap();
+	if (m_pReelMapInnerAll)
+		m_pReelMapInnerAll->ReloadReelmap();
 }
 
 void CManagerReelmap::ReloadReelmapDnInner()
@@ -620,11 +699,6 @@ void CManagerReelmap::ReloadReelmapDnInner()
 		m_pReelMapInnerDn->ReloadReelmap();
 }
 
-void CManagerReelmap::ReloadReelmapAllDnInner()
-{
-	if (m_pReelMapInnerAllDn)
-		m_pReelMapInnerAllDn->ReloadReelmap();
-}
 
 BOOL CManagerReelmap::ReloadReelmapInner()
 {
@@ -633,7 +707,7 @@ BOOL CManagerReelmap::ReloadReelmapInner()
 
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
 
-	BOOL bRtn[7] = { 1 };
+	BOOL bRtn[6] = { 1 };
 
 	if (m_pReelMapInnerUp)
 		bRtn[1] = m_pReelMapInnerUp->ReloadReelmap();
@@ -647,13 +721,11 @@ BOOL CManagerReelmap::ReloadReelmapInner()
 	{
 		if (m_pReelMapInnerDn)
 			bRtn[4] = m_pReelMapInnerDn->ReloadReelmap();
-		if (m_pReelMapInnerAllUp)
-			bRtn[5] = m_pReelMapInnerAllUp->ReloadReelmap();
-		if (m_pReelMapInnerAllDn)
-			bRtn[6] = m_pReelMapInnerAllDn->ReloadReelmap();
+		if (m_pReelMapInnerAll)
+			bRtn[5] = m_pReelMapInnerAll->ReloadReelmap();
 	}
 
-	for (int i = 1; i < 7; i++)
+	for (int i = 1; i < 6; i++)
 	{
 		if (!bRtn[i])
 			return FALSE;
@@ -666,8 +738,8 @@ BOOL CManagerReelmap::IsDoneReloadReelmapInner(int& nProc)
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
 
-	int nRatio[7] = { 0 };
-	BOOL bDone[7] = { 0 };
+	int nRatio[6] = { 0 };
+	BOOL bDone[6] = { 0 };
 
 	bDone[0] = TRUE;
 
@@ -699,32 +771,23 @@ BOOL CManagerReelmap::IsDoneReloadReelmapInner(int& nProc)
 		else
 			bDone[4] = TRUE;
 
-		if (m_pReelMapInnerAllUp)
+		if (m_pReelMapInnerAll)
 		{
-			nRatio[5] = m_pReelMapInnerAllUp->GetProgressReloadReelmap();
-			bDone[5] = m_pReelMapInnerAllUp->IsDoneReloadReelmap();
+			nRatio[5] = m_pReelMapInnerAll->GetProgressReloadReelmap();
+			bDone[5] = m_pReelMapInnerAll->IsDoneReloadReelmap();
 		}
 		else
 			bDone[5] = TRUE;
-
-		if (m_pReelMapAllDn)
-		{
-			nRatio[6] = m_pReelMapInnerAllDn->GetProgressReloadReelmap();
-			bDone[6] = m_pReelMapInnerAllDn->IsDoneReloadReelmap();
-		}
-		else
-			bDone[6] = TRUE;
 	}
 	else
 	{
 		bDone[4] = TRUE;
 		bDone[5] = TRUE;
-		bDone[6] = TRUE;
 	}
 
-	nProc = nRatio[0] + nRatio[1] + nRatio[2] + nRatio[3] + nRatio[4] + nRatio[5] + nRatio[6];
+	nProc = nRatio[0] + nRatio[1] + nRatio[2] + nRatio[3] + nRatio[4] + nRatio[5];
 
-	if (bDone[0] && bDone[1] && bDone[2] && bDone[3] && bDone[4] && bDone[5] && bDone[6])
+	if (bDone[0] && bDone[1] && bDone[2] && bDone[3] && bDone[4] && bDone[5])
 		return TRUE;
 
 	return FALSE;
@@ -786,42 +849,23 @@ void CManagerReelmap::UpdateData()
 		m_pReelMapDn->m_dTempPauseLen = _tstof(pDoc->WorkingInfo.LastJob.sTempPauseLen);
 	}
 
-	if (m_pReelMapAllUp)
+	if (m_pReelMapAll)
 	{
-		m_pReelMapAllUp->m_sMc = pDoc->WorkingInfo.System.sMcName;
-		m_pReelMapAllUp->m_sUser = pDoc->WorkingInfo.LastJob.sSelUserName;
+		m_pReelMapAll->m_sMc = pDoc->WorkingInfo.System.sMcName;
+		m_pReelMapAll->m_sUser = pDoc->WorkingInfo.LastJob.sSelUserName;
 
-		m_pReelMapAllUp->m_bUseLotSep = pDoc->WorkingInfo.LastJob.bLotSep;
-		m_pReelMapAllUp->m_bUseTempPause = pDoc->WorkingInfo.LastJob.bTempPause;
+		m_pReelMapAll->m_bUseLotSep = pDoc->WorkingInfo.LastJob.bLotSep;
+		m_pReelMapAll->m_bUseTempPause = pDoc->WorkingInfo.LastJob.bTempPause;
 
-		m_pReelMapAllUp->m_dTotLen = _tstof(pDoc->WorkingInfo.LastJob.sReelTotLen)*1000.0;
-		m_pReelMapAllUp->m_dPnlLen = _tstof(pDoc->WorkingInfo.LastJob.sOnePnlLen);
-		m_pReelMapAllUp->m_dLotCutPosLen = _tstof(pDoc->WorkingInfo.LastJob.sLotCutPosLen);
-		if (m_pReelMapAllUp->m_bUseLotSep)
-			m_pReelMapAllUp->m_dLotLen = _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen);
+		m_pReelMapAll->m_dTotLen = _tstof(pDoc->WorkingInfo.LastJob.sReelTotLen)*1000.0;
+		m_pReelMapAll->m_dPnlLen = _tstof(pDoc->WorkingInfo.LastJob.sOnePnlLen);
+		m_pReelMapAll->m_dLotCutPosLen = _tstof(pDoc->WorkingInfo.LastJob.sLotCutPosLen);
+		if (m_pReelMapAll->m_bUseLotSep)
+			m_pReelMapAll->m_dLotLen = _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen);
 		else
-			m_pReelMapAllUp->m_dLotLen = m_pReelMap->m_dTotLen;
-		m_pReelMapAllUp->m_dTempPauseLen = _tstof(pDoc->WorkingInfo.LastJob.sTempPauseLen);
+			m_pReelMapAll->m_dLotLen = m_pReelMap->m_dTotLen;
+		m_pReelMapAll->m_dTempPauseLen = _tstof(pDoc->WorkingInfo.LastJob.sTempPauseLen);
 	}
-
-	if (m_pReelMapAllDn)
-	{
-		m_pReelMapAllDn->m_sMc = pDoc->WorkingInfo.System.sMcName;
-		m_pReelMapAllDn->m_sUser = pDoc->WorkingInfo.LastJob.sSelUserName;
-
-		m_pReelMapAllDn->m_bUseLotSep = pDoc->WorkingInfo.LastJob.bLotSep;
-		m_pReelMapAllDn->m_bUseTempPause = pDoc->WorkingInfo.LastJob.bTempPause;
-
-		m_pReelMapAllDn->m_dTotLen = _tstof(pDoc->WorkingInfo.LastJob.sReelTotLen)*1000.0;
-		m_pReelMapAllDn->m_dPnlLen = _tstof(pDoc->WorkingInfo.LastJob.sOnePnlLen);
-		m_pReelMapAllDn->m_dLotCutPosLen = _tstof(pDoc->WorkingInfo.LastJob.sLotCutPosLen);
-		if (m_pReelMapAllDn->m_bUseLotSep)
-			m_pReelMapAllDn->m_dLotLen = _tstof(pDoc->WorkingInfo.LastJob.sLotSepLen);
-		else
-			m_pReelMapAllDn->m_dLotLen = m_pReelMap->m_dTotLen;
-		m_pReelMapAllDn->m_dTempPauseLen = _tstof(pDoc->WorkingInfo.LastJob.sTempPauseLen);
-	}
-
 }
 
 BOOL CManagerReelmap::InitReelmap()
@@ -855,22 +899,15 @@ BOOL CManagerReelmap::InitReelmap()
 		}
 		m_pReelMapDn = new CReelMap(RMAP_DN, MAX_DISP_PNL, nTotPcs);
 
-		if (m_pReelMapAllUp)
+		if (m_pReelMapAll)
 		{
-			delete m_pReelMapAllUp;
-			m_pReelMapAllUp = NULL;
+			delete m_pReelMapAll;
+			m_pReelMapAll = NULL;
 		}
-		m_pReelMapAllUp = new CReelMap(RMAP_ALLUP, MAX_DISP_PNL, nTotPcs);
-
-		if (m_pReelMapAllDn)
-		{
-			delete m_pReelMapAllDn;
-			m_pReelMapAllDn = NULL;
-		}
-		m_pReelMapAllDn = new CReelMap(RMAP_ALLDN, MAX_DISP_PNL, nTotPcs);
+		m_pReelMapAll = new CReelMap(RMAP_ALLUP, MAX_DISP_PNL, nTotPcs);
 
 		if (pDoc->GetTestMode() != MODE_OUTER)
-			m_pReelMap = m_pReelMapAllUp;
+			m_pReelMap = m_pReelMapAll;
 		else
 		{
 			if (m_pReelMapIts)
@@ -924,6 +961,85 @@ void CManagerReelmap::InitReelmapDn()
 		SetReelmap(ROT_NONE);
 		UpdateData();
 	}
+}
+
+void CManagerReelmap::FreeReelmap()
+{
+
+	if (m_pReelMapUp)
+	{
+		delete m_pReelMapUp;
+		m_pReelMapUp = NULL;
+	}
+
+	if (m_pReelMapDn)
+	{
+		delete m_pReelMapDn;
+		m_pReelMapDn = NULL;
+	}
+
+	if (m_pReelMapAll)
+	{
+		delete m_pReelMapAll;
+		m_pReelMapAll = NULL;
+	}
+
+	if (m_pReelMapIts)
+	{
+		delete m_pReelMapIts;
+		m_pReelMapIts = NULL;
+	}
+
+	if (m_pReelMapInnerUp)
+	{
+		delete m_pReelMapInnerUp;
+		m_pReelMapInnerUp = NULL;
+	}
+
+	if (m_pReelMapInnerDn)
+	{
+		delete m_pReelMapInnerDn;
+		m_pReelMapInnerDn = NULL;
+	}
+
+	if (m_pReelMapInnerAll)
+	{
+		delete m_pReelMapInnerAll;
+		m_pReelMapInnerAll = NULL;
+	}
+}
+
+void CManagerReelmap::FreePcr()
+{
+	int i = 0, k = 0;
+
+	for (i = 0; i < MAX_PCR; i++)
+	{
+		for (k = 0; k < MAX_PCR_PNL; k++)
+		{
+			if (m_pPcr[i][k])
+			{
+				delete m_pPcr[i][k];
+				m_pPcr[i][k] = NULL;
+			}
+
+			if (m_pPcrInner[i][k])
+			{
+				delete m_pPcrInner[i][k];
+				m_pPcrInner[i][k] = NULL;
+			}
+		}
+	}
+
+	for (k = 0; k < MAX_PCR_PNL; k++)
+	{
+		if (m_pPcrIts[k])
+		{
+			delete m_pPcrIts[k];
+			m_pPcrIts[k] = NULL;
+		}
+	}
+
 }
 
 void CManagerReelmap::SetReelmap(int nDir)
@@ -1051,8 +1167,8 @@ void CManagerReelmap::SwitchReelmapDisp(int nSelRmap)
 			break;
 		case RMAP_ALLUP:
 		case RMAP_ALLDN:
-			if (m_pReelMapAllUp)
-				m_pReelMapDisp = m_pReelMapAllUp;
+			if (m_pReelMapAll)
+				m_pReelMapDisp = m_pReelMapAll;
 			break;
 		case RMAP_ITS:
 			if (m_pReelMapIts)
@@ -1099,20 +1215,14 @@ BOOL CManagerReelmap::InitReelmapInner()
 		}
 		m_pReelMapInnerDn = new CReelMap(RMAP_INNER_DN, MAX_DISP_PNL, nTotPcs);
 
-		if (m_pReelMapInnerAllUp)
+		if (m_pReelMapInnerAll)
 		{
-			delete m_pReelMapInnerAllUp;
-			m_pReelMapInnerAllUp = NULL;
+			delete m_pReelMapInnerAll;
+			m_pReelMapInnerAll = NULL;
 		}
-		m_pReelMapInnerAllUp = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
+		m_pReelMapInnerAll = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
 
-		if (m_pReelMapInnerAllDn)
-		{
-			delete m_pReelMapInnerAllDn;
-			m_pReelMapInnerAllDn = NULL;
-		}
-		m_pReelMapInnerAllDn = new CReelMap(RMAP_INNER_ALLDN, MAX_DISP_PNL, nTotPcs);
-		m_pReelMapInner = m_pReelMapInnerAllUp;
+		m_pReelMapInner = m_pReelMapInnerAll;
 	}
 	else
 	{
@@ -1152,13 +1262,13 @@ BOOL CManagerReelmap::InitReelmapInnerUp()
 	if (bDualTest)
 	{
 
-		if (m_pReelMapInnerAllUp)
+		if (m_pReelMapInnerAll)
 		{
-			delete m_pReelMapInnerAllUp;
-			m_pReelMapInnerAllUp = NULL;
+			delete m_pReelMapInnerAll;
+			m_pReelMapInnerAll = NULL;
 		}
-		m_pReelMapInnerAllUp = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
-		m_pReelMapInner = m_pReelMapInnerAllUp;
+		m_pReelMapInnerAll = new CReelMap(RMAP_INNER_ALLUP, MAX_DISP_PNL, nTotPcs);
+		m_pReelMapInner = m_pReelMapInnerAll;
 	}
 	else
 	{
@@ -1199,13 +1309,6 @@ BOOL CManagerReelmap::InitReelmapInnerDn()
 	}
 	m_pReelMapInnerDn = new CReelMap(RMAP_INNER_DN, MAX_DISP_PNL, nTotPcs);
 
-	if (m_pReelMapInnerAllDn)
-	{
-		delete m_pReelMapInnerAllDn;
-		m_pReelMapInnerAllDn = NULL;
-	}
-
-	m_pReelMapInnerAllDn = new CReelMap(RMAP_INNER_ALLDN, MAX_DISP_PNL, nTotPcs);
 	SetReelmapInner(ROT_NONE);
 
 	return TRUE;
@@ -1312,7 +1415,7 @@ void CManagerReelmap::SetReelmapInner(int nDir)
 
 BOOL CManagerReelmap::OpenReelmapFromBuf(int nSerial)
 {
-	BOOL bRtn[4] = { 1 };
+	BOOL bRtn[3] = { 1 };
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	stModelInfo stInfoUp, stInfoDn;
@@ -1344,13 +1447,11 @@ BOOL CManagerReelmap::OpenReelmapFromBuf(int nSerial)
 	{
 		if (m_pReelMapDn)
 			bRtn[1] = m_pReelMapDn->Open();
-		if (m_pReelMapAllUp)
-			bRtn[2] = m_pReelMapAllUp->Open();
-		if (m_pReelMapAllDn)
-			bRtn[3] = m_pReelMapAllDn->Open();
+		if (m_pReelMapAll)
+			bRtn[2] = m_pReelMapAll->Open();
 	}
 
-	if (bRtn[0] && bRtn[1] && bRtn[2] && bRtn[3])
+	if (bRtn[0] && bRtn[1] && bRtn[2])
 		return TRUE;
 
 	return FALSE;
@@ -1358,7 +1459,7 @@ BOOL CManagerReelmap::OpenReelmapFromBuf(int nSerial)
 
 BOOL CManagerReelmap::OpenReelmap()
 {
-	BOOL bRtn[4] = { 1 };
+	BOOL bRtn[3] = { 1 };
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
 	if (m_pReelMapUp)
@@ -1368,13 +1469,11 @@ BOOL CManagerReelmap::OpenReelmap()
 	{
 		if (m_pReelMapDn)
 			bRtn[1] = m_pReelMapDn->Open();
-		if (m_pReelMapAllUp)
-			bRtn[2] = m_pReelMapAllUp->Open();
-		if (m_pReelMapAllDn)
-			bRtn[3] = m_pReelMapAllDn->Open();
+		if (m_pReelMapAll)
+			bRtn[2] = m_pReelMapAll->Open();
 	}
 
-	if (bRtn[0] && bRtn[1] && bRtn[2] && bRtn[3])
+	if (bRtn[0] && bRtn[1] && bRtn[2])
 		return TRUE;
 
 	return FALSE;
@@ -1390,8 +1489,8 @@ BOOL CManagerReelmap::OpenReelmapUp()
 
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			bRtn[1] = m_pReelMapAllUp->Open();
+		if (m_pReelMapAll)
+			bRtn[1] = m_pReelMapAll->Open();
 	}
 
 	if (bRtn[0] && bRtn[1])
@@ -1409,8 +1508,6 @@ BOOL CManagerReelmap::OpenReelmapDn()
 
 	if (m_pReelMapDn)
 		bRtn[0] = m_pReelMapDn->Open();
-	if (m_pReelMapAllDn)
-		bRtn[1] = m_pReelMapAllDn->Open();
 
 	if (bRtn[0] && bRtn[1])
 		return TRUE;
@@ -1420,7 +1517,7 @@ BOOL CManagerReelmap::OpenReelmapDn()
 
 BOOL CManagerReelmap::OpenReelmapInner()
 {
-	BOOL bRtn[5] = { 1 };
+	BOOL bRtn[4] = { 1 };
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
 
 	if (m_pReelMapInnerUp)
@@ -1433,13 +1530,11 @@ BOOL CManagerReelmap::OpenReelmapInner()
 	{
 		if (m_pReelMapInnerDn)
 			bRtn[2] = m_pReelMapInnerDn->Open();
-		if (m_pReelMapInnerAllUp)
-			bRtn[3] = m_pReelMapInnerAllUp->Open();
-		if (m_pReelMapInnerAllDn)
-			bRtn[4] = m_pReelMapInnerAllDn->Open();
+		if (m_pReelMapInnerAll)
+			bRtn[3] = m_pReelMapInnerAll->Open();
 	}
 
-	if (bRtn[0] && bRtn[1] && bRtn[2] && bRtn[3] && bRtn[4])
+	if (bRtn[0] && bRtn[1] && bRtn[2] && bRtn[3])
 		return TRUE;
 
 	return FALSE;
@@ -1455,8 +1550,8 @@ BOOL CManagerReelmap::OpenReelmapInnerUp()
 
 	if (bDualTest)
 	{
-		if (m_pReelMapInnerAllUp)
-			bRtn[1] = m_pReelMapInnerAllUp->Open();
+		if (m_pReelMapInnerAll)
+			bRtn[1] = m_pReelMapInnerAll->Open();
 	}
 
 	if (bRtn[0] && bRtn[1])
@@ -1475,8 +1570,6 @@ BOOL CManagerReelmap::OpenReelmapInnerDn()
 
 	if (m_pReelMapInnerDn)
 		bRtn[0] = m_pReelMapInnerDn->Open();
-	if (m_pReelMapInnerAllDn)
-		bRtn[1] = m_pReelMapInnerAllDn->Open();
 
 	if (bRtn[0] && bRtn[1])
 		return TRUE;
@@ -1484,18 +1577,1839 @@ BOOL CManagerReelmap::OpenReelmapInnerDn()
 	return FALSE;
 }
 
+int CManagerReelmap::LoadPCR0(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Error-LoadPCR0()"));
+		return 0;
+	}
+
+	int nRtn[3] = { 1 };
+	nRtn[0] = LoadPcrUp(nSerial);
+	if (nRtn[0] != 1)
+		return nRtn[0];
+	if (pView->GetAoiUpVsStatus())
+	{
+		if (pDoc->m_ListBuf[0].nTot <= pDoc->m_ListBuf[1].nTot)
+		{
+			nRtn[1] = LoadPcrAll(nSerial);
+			if (nRtn[1] != 1)
+				return nRtn[1];
+
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				nRtn[2] = LoadPcrIts(nSerial);
+				if (nRtn[2] != 1)
+					return nRtn[2];
+			}
+		}
+		else
+		{
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				int nRtnInner[4] = { 1 };
+				nRtnInner[0] = LoadPcrUpInner(nSerial);
+				nRtnInner[1] = LoadPcrDnInner(nSerial);
+				nRtnInner[2] = LoadPcrAllInner(nSerial);
+
+				if (nRtnInner[0] != 1)
+					return nRtnInner[0];
+				if (nRtnInner[1] != 1)
+					return nRtnInner[1];
+				if (nRtnInner[2] != 1)
+					return nRtnInner[2];
+
+				if (!bDualTest)
+				{
+					nRtnInner[3] = LoadPcrIts(nSerial);
+					if (nRtnInner[3] != 1)
+						return nRtnInner[3];
+				}
+			}
+		}
+	}
+	else
+	{
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			int nRtnInner[4] = { 1 };
+			nRtnInner[0] = LoadPcrUpInner(nSerial);
+			nRtnInner[1] = LoadPcrDnInner(nSerial);
+			nRtnInner[2] = LoadPcrAllInner(nSerial);
+
+			if (nRtnInner[0] != 1)
+				return nRtnInner[0];
+			if (nRtnInner[1] != 1)
+				return nRtnInner[1];
+			if (nRtnInner[2] != 1)
+				return nRtnInner[2];
+
+			if (!bDualTest)
+			{
+				nRtnInner[3] = LoadPcrIts(nSerial);
+				if (nRtnInner[3] != 1)
+					return nRtnInner[3];
+			}
+		}
+	}
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPCR1(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Error-LoadPCR1()"));
+		return 0;
+	}
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return 0;
+
+	int nRtn[3] = { 1 };
+	nRtn[0] = LoadPcrDn(nSerial);
+	if (nRtn[0] != 1)
+		return nRtn[0];
+
+	if (pView->GetAoiUpVsStatus())
+	{
+		if (pDoc->m_ListBuf[1].nTot <= pDoc->m_ListBuf[0].nTot)
+		{
+			nRtn[1] = LoadPcrAll(nSerial);
+			if (nRtn[1] != 1)
+				return nRtn[1];
+
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				nRtn[2] = LoadPcrIts(nSerial);
+				if (nRtn[2] != 1)
+					return nRtn[2];
+			}
+		}
+		else
+		{
+			if (pDoc->GetTestMode() == MODE_OUTER)
+			{
+				int nRtnInner[3] = { 1 };
+				nRtnInner[0] = LoadPcrUpInner(nSerial);
+				nRtnInner[1] = LoadPcrDnInner(nSerial);
+				nRtnInner[2] = LoadPcrAllInner(nSerial);
+
+				if (nRtnInner[0] != 1)
+					return nRtnInner[0];
+				if (nRtnInner[1] != 1)
+					return nRtnInner[1];
+				if (nRtnInner[2] != 1)
+					return nRtnInner[2];
+			}
+		}
+	}
+	else
+	{
+		nRtn[1] = LoadPcrAll(nSerial);
+		if (nRtn[1] != 1)
+			return nRtn[1];
+
+		if (pDoc->GetTestMode() == MODE_OUTER)
+		{
+			nRtn[2] = LoadPcrIts(nSerial);
+			if (nRtn[2] != 1)
+				return nRtn[2];
+		}
+	}
+
+	return (1); // 1(정상)
+}
+
+//int CManagerReelmap::LoadPcrUp(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+//{
+//	if (m_pReelMapUp)
+//		return m_pReelMapUp->LoadPCR(nSerial);
+//	return 2;
+//}
+//
+//int CManagerReelmap::LoadPcrDn(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+//{
+//	if (m_pReelMapDn)
+//		return m_pReelMapDn->LoadPCR(nSerial);
+//	return 2;
+//}
+//
+//int CManagerReelmap::LoadPcrAll(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+//{
+//	if (m_pReelMapAll)
+//		return m_pReelMapAll->LoadPCRAll(nSerial);
+//	return 2;
+//}
+
 int CManagerReelmap::LoadPcrUp(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
 {
-	if (m_pReelMapUp)
-		return m_pReelMapUp->LoadPCR(nSerial);
-	return 2;
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp, i, nC, nR;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	CPcsRgn* pPcsRgn = ((CManagerReelmap*)m_pParent)->m_Master[0].m_pPcsRgn;
+
+	if (nSerial <= 0)
+	{
+		strFileData.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcr[0])
+	{
+		strFileData.Format(_T("PCR[0]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+	CString sPath;
+
+#ifdef TEST_MODE
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), pDoc->WorkingInfo.System.sPathVrsBufUp, nSerial);
+#endif
+
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData = CharToString(FileData);
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCR[Up] 파일이 존재하지 않습니다.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcr[0])
+		return(2);
+
+	BOOL bResetMkInfo = FALSE;
+
+	m_pPcr[0][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcr[0][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);;
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	m_pPcr[0][nIdx]->Init(nSerial, nTotDef);
+
+	if (nTotDef > 0)
+	{
+		for (i = 0; i < nTotDef; i++)
+		{
+			// Cam ID
+			nTemp = strFileData.Find(',', 0);
+			strCamID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_nCamId = _tstoi(strCamID);
+
+			// Piece Number
+			nTemp = strFileData.Find(',', 0);
+			strPieceID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+
+			// LoadStripPieceRegion_Binary()에 의해 PCS Index가 결정됨.
+			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
+			{
+				m_pPcr[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+			}
+			else
+				m_pPcr[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+
+			m_pPcr[0][nIdx]->m_pLayer[i] = 0; // Up
+
+			// BadPointPosX
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosX = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pDefPos[i].x = (long)_tstoi(strBadPointPosX);
+
+			// BadPointPosY
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosY = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pDefPos[i].y = (long)_tstoi(strBadPointPosY);
+
+			// BadName
+			nTemp = strFileData.Find(',', 0);
+			strBadName = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pDefType[i] = _tstoi(strBadName);
+
+			pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
+			m_pPcr[0][nIdx]->m_arDefType[nR][nC] = m_pPcr[0][nIdx]->m_pDefType[i];
+			m_pPcr[0][nIdx]->m_arPcrLineNum[nR][nC] = i;
+
+			// CellNum
+			nTemp = strFileData.Find(',', 0);
+			strCellNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pCell[i] = _tstoi(strCellNum);
+
+			// ImageSize
+			nTemp = strFileData.Find(',', 0);
+			strImageSize = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pImgSz[i] = _tstoi(strImageSize);
+
+			// ImageNum
+			nTemp = strFileData.Find(',', 0);
+			strImageNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pImg[i] = _tstoi(strImageNum);
+
+			// strMarkingCode : -2 (NoMarking)
+			nTemp = strFileData.Find('\n', 0);
+			strMarkingCode = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[0][nIdx]->m_pMk[i] = _tstoi(strMarkingCode);
+		}
+	}
+
+	return (1); // 1(정상)
 }
 
 int CManagerReelmap::LoadPcrDn(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
 {
-	if (m_pReelMapDn)
-		return m_pReelMapDn->LoadPCR(nSerial);
-	return 2;
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp, i, nC, nR;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	CPcsRgn* pPcsRgn = ((CManagerReelmap*)m_pParent)->m_Master[0].m_pPcsRgn;
+
+	if (nSerial <= 0)
+	{
+		strFileData.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcr[1])
+	{
+		strFileData.Format(_T("PCR[0]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+	CString sPath;
+
+#ifdef TEST_MODE
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), pDoc->WorkingInfo.System.sPathVrsBufDn, nSerial);
+#endif
+
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData = CharToString(FileData);
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCR[Up] 파일이 존재하지 않습니다.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcr[1])
+		return(2);
+
+	BOOL bResetMkInfo = FALSE;
+
+	m_pPcr[1][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcr[1][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);;
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	m_pPcr[1][nIdx]->Init(nSerial, nTotDef);
+
+	if (nTotDef > 0)
+	{
+		for (i = 0; i < nTotDef; i++)
+		{
+			// Cam ID
+			nTemp = strFileData.Find(',', 0);
+			strCamID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_nCamId = _tstoi(strCamID);
+
+			// Piece Number
+			nTemp = strFileData.Find(',', 0);
+			strPieceID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+
+			// LoadStripPieceRegion_Binary()에 의해 PCS Index가 결정됨.
+			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
+			{
+				m_pPcr[1][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+			}
+			else
+				m_pPcr[1][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+
+			m_pPcr[1][nIdx]->m_pLayer[i] = 0; // Up
+
+			// BadPointPosX
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosX = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pDefPos[i].x = (long)_tstoi(strBadPointPosX);
+
+			// BadPointPosY
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosY = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pDefPos[i].y = (long)_tstoi(strBadPointPosY);
+
+			// BadName
+			nTemp = strFileData.Find(',', 0);
+			strBadName = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pDefType[i] = _tstoi(strBadName);
+
+			pPcsRgn->GetMkMatrix(m_pPcr[0][nIdx]->m_pDefPcs[i], nC, nR);
+			m_pPcr[1][nIdx]->m_arDefType[nR][nC] = m_pPcr[0][nIdx]->m_pDefType[i];
+			m_pPcr[1][nIdx]->m_arPcrLineNum[nR][nC] = i;
+
+			// CellNum
+			nTemp = strFileData.Find(',', 0);
+			strCellNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pCell[i] = _tstoi(strCellNum);
+
+			// ImageSize
+			nTemp = strFileData.Find(',', 0);
+			strImageSize = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pImgSz[i] = _tstoi(strImageSize);
+
+			// ImageNum
+			nTemp = strFileData.Find(',', 0);
+			strImageNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pImg[i] = _tstoi(strImageNum);
+
+			// strMarkingCode : -2 (NoMarking)
+			nTemp = strFileData.Find('\n', 0);
+			strMarkingCode = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcr[1][nIdx]->m_pMk[i] = _tstoi(strMarkingCode);
+		}
+	}
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPcrAll(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+#ifdef TEST_MODE
+	return 0;
+#endif
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+	if (!bDualTest)
+		return 0;
+
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.16"));
+		return 0;
+	}
+
+	int i, idx;//, k
+	CString str;
+
+	if (nSerial < 0)
+	{
+		str.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(str);
+		return(2);
+	}
+
+	if (!m_pPcr[2])
+	{
+		str.Format(_T("PCR[2]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(str);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+
+	if (!m_pPcr[0] || !m_pPcr[1] || !m_pPcr[2])
+		return(2);
+	if (!m_pPcr[0][nIdx] || !m_pPcr[1][nIdx] || !m_pPcr[2][nIdx])
+		return(2);
+
+	m_pPcr[2][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcr[2][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	if (m_pPcr[0][nIdx]->m_nErrPnl < 0)
+		m_pPcr[2][nIdx]->m_nErrPnl = m_pPcr[0][nIdx]->m_nErrPnl;
+	else if (m_pPcr[1][nIdx]->m_nErrPnl < 0)
+		m_pPcr[2][nIdx]->m_nErrPnl = m_pPcr[1][nIdx]->m_nErrPnl;
+	else
+		m_pPcr[2][nIdx]->m_nErrPnl = m_pPcr[0][nIdx]->m_nErrPnl;
+
+	// Model
+	m_pPcr[2][nIdx]->m_sModel = m_pPcr[0][nIdx]->m_sModel;
+
+	// Layer
+	m_pPcr[2][nIdx]->m_sLayer = m_pPcr[0][nIdx]->m_sLayer;
+
+	// Lot
+	m_pPcr[2][nIdx]->m_sLot = m_pPcr[0][nIdx]->m_sLot;
+
+	int nTotDef[3] = { 0 };									// [0]: 상면, [1]: 하면, [2]: 상/하면 Merge
+	nTotDef[0] = pDoc->m_pPcr[0][nIdx]->m_nTotDef;			// 상면 불량 피스 수
+	nTotDef[1] = pDoc->m_pPcr[1][nIdx]->m_nTotDef;			// 하면 불량 피스 수
+
+	int nTotPcs = m_Master[0].m_pPcsRgn->nTotPcs;
+	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
+
+	int nPcsId;
+	int nTotVerifyed[2] = { 0 };							// nPcsId : CamMaster Pcs Index
+															// pPcrMgr테이블의 nIdx에 하면의 불량을 먼저 기록하고 상면의 불량을 엎어서 최종 merge불량 테이블을 만듬.
+	for (i = 0; i < nTotDef[1]; i++)						// 하면 불량 피스 수
+	{
+		if (m_pPcr[1][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcr[1][nIdx]->m_pDefPcs[i];			// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// Up+Dn			// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxDn = i; // Dn				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[1]++;
+		}
+	}
+	for (i = 0; i < nTotDef[0]; i++)						// 상면 불량 피스 수
+	{
+		if (m_pPcr[0][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcr[0][nIdx]->m_pDefPcs[i];			// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// Up+Dn			// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxUp = i;	// Up				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[0]++;
+		}
+	}
+
+
+	nTotDef[2] = 0;
+	for (i = 0; i < nTotPcs; i++)							// Shot내 총 Piece수
+	{
+		if (pPcrMgr[i].nIdx > -1)	// Up+Dn				// 상하면 Merge [i:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			nTotDef[2]++;									// 상 / 하면 Merge한 총 불량피스수.
+	}
+
+	m_pPcr[2][nIdx]->Init(nSerial, nTotDef[2]);				// 제품시리얼, Shot내 총불량 피스수
+
+	int nId[2], Ord;										// [0]: 상면 0~불량피스순서, [1]: 하면 0~불량피스순서
+	idx = 0;												// 마킹순서 0~불량피스수만큼 정하기위해 현시점의 idx를 초기화함.
+	if (nTotDef[2] > 0)										// 상 / 하면 Merge한 총 불량피스수.
+	{
+		for (nPcsId = 0; nPcsId < nTotPcs; nPcsId++)
+		{
+			nId[0] = pPcrMgr[nPcsId].nIdxUp;				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서 임. nId[0]: 상면에서의 PCR파일순서 인덱스
+			nId[1] = pPcrMgr[nPcsId].nIdxDn;				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서 임. nId[1]: 하면에서의 PCR파일순서 인덱스
+
+			if (nId[0] > -1)
+			{
+				Ord = nId[0];
+				// Cam ID
+				m_pPcr[2][nIdx]->m_nCamId = m_pPcr[0][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcr[2][nIdx]->m_pDefPcs[idx] = m_pPcr[0][nIdx]->m_pDefPcs[Ord];
+				m_pPcr[2][nIdx]->m_pLayer[idx] = m_pPcr[0][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcr[2][nIdx]->m_pDefPos[idx].x = m_pPcr[0][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcr[2][nIdx]->m_pDefPos[idx].y = m_pPcr[0][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcr[2][nIdx]->m_pDefType[idx] = m_pPcr[0][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcr[2][nIdx]->m_pCell[idx] = m_pPcr[0][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcr[2][nIdx]->m_pImgSz[idx] = m_pPcr[0][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcr[2][nIdx]->m_pImg[idx] = m_pPcr[0][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcr[2][nIdx]->m_pMk[idx] = m_pPcr[0][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+			else if (nId[1] > -1)
+			{
+				Ord = nId[1];
+				// Cam ID
+				m_pPcr[2][nIdx]->m_nCamId = m_pPcr[1][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcr[2][nIdx]->m_pDefPcs[idx] = m_pPcr[1][nIdx]->m_pDefPcs[Ord];
+				m_pPcr[2][nIdx]->m_pLayer[idx] = m_pPcr[1][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcr[2][nIdx]->m_pDefPos[idx].x = m_pPcr[1][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcr[2][nIdx]->m_pDefPos[idx].y = m_pPcr[1][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcr[2][nIdx]->m_pDefType[idx] = m_pPcr[1][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcr[2][nIdx]->m_pCell[idx] = m_pPcr[1][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcr[2][nIdx]->m_pImgSz[idx] = m_pPcr[1][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcr[2][nIdx]->m_pImg[idx] = m_pPcr[1][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcr[2][nIdx]->m_pMk[idx] = m_pPcr[1][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+		}
+	}
+
+	delete[] pPcrMgr;
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPcrUpInner(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp, i;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	if (nSerial <= 0)
+	{
+		strFileData.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcrInner[0])
+	{
+		strFileData.Format(_T("PCR[0]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+
+	CString sPath, sUpPath, sDnPath;
+
+	if (!pDoc->GetInnerFolderPath(nSerial, sUpPath, sDnPath))
+	{
+		strFileData.Format(_T("GetInnerFolderPath가 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+#ifndef USE_CAM_MASTER
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), sUpPath, nSerial);
+#endif
+
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData = CharToString(FileData);
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCRInner[Up] 파일이 존재하지 않습니다.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcrInner[0])
+		return(2);
+	if (!m_pPcrInner[0][nIdx])
+		return(2);
+
+	BOOL bResetMkInfo = FALSE;
+
+	m_pPcrInner[0][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcrInner[0][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[0][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
+
+	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
+	{
+		int syd = 1;
+	}
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[0][nIdx]->m_sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[0][nIdx]->m_sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[0][nIdx]->m_sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);;
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	m_pPcrInner[0][nIdx]->Init(nSerial, nTotDef);
+
+	if (nTotDef > 0)
+	{
+		for (i = 0; i < nTotDef; i++)
+		{
+			// Cam ID
+			nTemp = strFileData.Find(',', 0);
+			strCamID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_nCamId = _tstoi(strCamID);
+
+			// Piece Number
+			nTemp = strFileData.Find(',', 0);
+			strPieceID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+
+			// LoadStripPieceRegion_Binary()에 의해 PCS Index가 결정됨.
+			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
+				m_pPcrInner[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+			else
+				m_pPcrInner[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+
+			m_pPcrInner[0][nIdx]->m_pLayer[i] = 0; // Up
+
+			// BadPointPosX
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosX = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pDefPos[i].x = (long)_tstoi(strBadPointPosX);
+
+			// BadPointPosY
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosY = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pDefPos[i].y = (long)_tstoi(strBadPointPosY);
+
+			// BadName
+			nTemp = strFileData.Find(',', 0);
+			strBadName = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pDefType[i] = _tstoi(strBadName);
+
+			// CellNum
+			nTemp = strFileData.Find(',', 0);
+			strCellNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pCell[i] = _tstoi(strCellNum);
+
+			// ImageSize
+			nTemp = strFileData.Find(',', 0);
+			strImageSize = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pImgSz[i] = _tstoi(strImageSize);
+
+			// ImageNum
+			nTemp = strFileData.Find(',', 0);
+			strImageNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pImg[i] = _tstoi(strImageNum);
+
+			// strMarkingCode : -2 (NoMarking)
+			nTemp = strFileData.Find('\n', 0);
+			strMarkingCode = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[0][nIdx]->m_pMk[i] = _tstoi(strMarkingCode);
+		}
+	}
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPcrDnInner(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+	BOOL bDualTest;
+	CString sLot, sLayerUp, sLayerDn;
+	if (!pDoc->GetItsSerialInfo(nSerial, bDualTest, sLot, sLayerUp, sLayerDn, 1))
+	{
+		CString str;
+		str.Format(_T("It is trouble to read GetItsSerialInfo()."));
+		pView->MsgBox(str);
+		return 0;
+	}
+
+	if (!bDualTest)
+		return 1;
+
+	FILE *fp;
+	char FileD[200];
+	size_t nFileSize, nRSize;
+	char *FileData;
+	CString strFileData;
+	int nTemp, i;
+	CString strHeaderErrorInfo, strModel, strLayer, strLot, sItsCode, strTotalBadPieceNum;
+	CString strCamID, strPieceID, strBadPointPosX, strBadPointPosY, strBadName,
+		strCellNum, strImageSize, strImageNum, strMarkingCode;
+
+	if (nSerial <= 0)
+	{
+		strFileData.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcrInner[1])
+	{
+		strFileData.Format(_T("PCR[1]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+
+	CString sPath, sUpPath, sDnPath;
+
+	if (!pDoc->GetInnerFolderPath(nSerial, sUpPath, sDnPath))
+	{
+		strFileData.Format(_T("GetInnerFolderPath가 설정되지 않았습니다."));
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+#ifndef USE_CAM_MASTER
+	sPath = PATH_PCR;	// for Test
+#else
+	sPath.Format(_T("%s%04d.pcr"), sDnPath, nSerial);
+#endif
+	StringToChar(sPath, FileD);
+
+	if ((fp = fopen(FileD, "r")) != NULL)
+	{
+		fseek(fp, 0, SEEK_END);
+		nFileSize = ftell(fp);
+		fseek(fp, 0, SEEK_SET);
+
+		/* Allocate space for a path name */
+		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
+
+		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
+		strFileData = CharToString(FileData);
+		fclose(fp);
+		free(FileData);
+	}
+	else
+	{
+		strFileData.Format(_T("PCRInner[Dn] 파일이 존재하지 않습니다.\r\n%s"), sPath);
+		pView->MsgBox(strFileData);
+		return(2);
+	}
+
+	if (!m_pPcrInner[1])
+		return(2);
+	if (!m_pPcrInner[1][nIdx])
+		return(2);
+
+	m_pPcrInner[1][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcrInner[1][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	nTemp = strFileData.Find(',', 0);
+	strHeaderErrorInfo = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[1][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
+
+	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
+	{
+		int syd = 1;
+	}
+
+	// Model
+	nTemp = strFileData.Find(',', 0);
+	strModel = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[1][nIdx]->m_sModel = strModel;
+
+	// Layer
+	nTemp = strFileData.Find(',', 0);
+	strLayer = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[1][nIdx]->m_sLayer = strLayer;
+
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[1][nIdx]->m_sLot = strLot;
+
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
+
+	nTemp = strFileData.Find('\n', 0);
+	strTotalBadPieceNum = strFileData.Left(nTemp);;
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+
+
+	int nTotDef = _tstoi(strTotalBadPieceNum);
+
+	m_pPcrInner[1][nIdx]->Init(nSerial, nTotDef);
+
+	if (nTotDef > 0)
+	{
+		for (i = 0; i < nTotDef; i++)
+		{
+			// Cam ID
+			nTemp = strFileData.Find(',', 0);
+			strCamID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_nCamId = _tstoi(strCamID);
+
+			// Piece Number
+			nTemp = strFileData.Find(',', 0);
+			strPieceID = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+
+			// LoadStripPieceRegion_Binary()에 의해 PCS Index가 결정됨.
+			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
+				m_pPcrInner[1][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+			else
+				m_pPcrInner[1][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
+				//m_pPcrInner[1][nIdx]->m_pDefPcs[i] = MirrorLR(_tstoi(strPieceID));	// 초기 양면검사기용
+
+			m_pPcrInner[1][nIdx]->m_pLayer[i] = 1; // Dn
+
+			// BadPointPosX
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosX = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pDefPos[i].x = (long)_tstoi(strBadPointPosX);
+
+			// BadPointPosY
+			nTemp = strFileData.Find(',', 0);
+			strBadPointPosY = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pDefPos[i].y = (long)_tstoi(strBadPointPosY);
+
+			// BadName
+			nTemp = strFileData.Find(',', 0);
+			strBadName = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pDefType[i] = _tstoi(strBadName);
+
+			// CellNum
+			nTemp = strFileData.Find(',', 0);
+			strCellNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pCell[i] = _tstoi(strCellNum);
+
+			// ImageSize
+			nTemp = strFileData.Find(',', 0);
+			strImageSize = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pImgSz[i] = _tstoi(strImageSize);
+
+			// ImageNum
+			nTemp = strFileData.Find(',', 0);
+			strImageNum = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pImg[i] = _tstoi(strImageNum);
+
+			// strMarkingCode : -2 (NoMarking)
+			nTemp = strFileData.Find('\n', 0);
+			strMarkingCode = strFileData.Left(nTemp);
+			strFileData.Delete(0, nTemp + 1);
+			nFileSize = nFileSize - nTemp - 1;
+			m_pPcrInner[1][nIdx]->m_pMk[i] = _tstoi(strMarkingCode);
+		}
+	}
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPcrAllInner(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+#ifndef USE_CAM_MASTER
+	return 0;
+#endif
+	BOOL bDualTest;
+	CString sLot, sLayerUp, sLayerDn;
+	if (!pDoc->GetItsSerialInfo(nSerial, bDualTest, sLot, sLayerUp, sLayerDn, 1))
+	{
+		CString str;
+		str.Format(_T("It is trouble to read GetItsSerialInfo()."));
+		pView->MsgBox(str);
+		return 0;
+	}
+
+	if (!bDualTest)
+		return 1;
+
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Serial Error.16"));
+		return 0;
+	}
+
+	int i, idx;//, k
+	CString str;
+
+	if (nSerial < 0)
+	{
+		str.Format(_T("PCR파일이 설정되지 않았습니다."));
+		pView->MsgBox(str);
+		return(2);
+	}
+
+	if (!m_pPcrInner[2])
+	{
+		str.Format(_T("PCR[2]관련 메모리가 할당되지 않았습니다."));
+		pView->MsgBox(str);
+		return(2);
+	}
+
+	int nIdx = GetPcrIdx(nSerial);
+
+	if (!m_pPcrInner[0] || !m_pPcrInner[1] || !m_pPcrInner[2])
+		return(2);
+	if (!m_pPcrInner[0][nIdx] || !m_pPcrInner[1][nIdx] || !m_pPcrInner[2][nIdx])
+		return(2);
+
+	m_pPcrInner[2][nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcrInner[2][nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	if (m_pPcrInner[0][nIdx]->m_nErrPnl < 0)
+		m_pPcrInner[2][nIdx]->m_nErrPnl = m_pPcrInner[0][nIdx]->m_nErrPnl;
+	else if (m_pPcrInner[1][nIdx]->m_nErrPnl < 0)
+		m_pPcrInner[2][nIdx]->m_nErrPnl = m_pPcrInner[1][nIdx]->m_nErrPnl;
+	else
+		m_pPcrInner[2][nIdx]->m_nErrPnl = m_pPcrInner[0][nIdx]->m_nErrPnl;
+
+	// Model
+	m_pPcrInner[2][nIdx]->m_sModel = m_pPcrInner[0][nIdx]->m_sModel;
+
+	// Layer
+	m_pPcrInner[2][nIdx]->m_sLayer = m_pPcrInner[0][nIdx]->m_sLayer;
+
+	// Lot
+	m_pPcrInner[2][nIdx]->m_sLot = m_pPcrInner[0][nIdx]->m_sLot;
+
+	int nTotDef[3] = { 0 };										// [0]: 상면, [1]: 하면, [2]: 상/하면 Merge
+	nTotDef[0] = pDoc->m_pPcrInner[0][nIdx]->m_nTotDef;			// 상면 불량 피스 수
+	nTotDef[1] = pDoc->m_pPcrInner[1][nIdx]->m_nTotDef;			// 하면 불량 피스 수
+
+	int nTotPcs = m_MasterInner[0].m_pPcsRgn->nTotPcs;
+	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
+
+	int nPcsId;													// nPcsId : CamMaster Pcs Index
+																//pPcrMgr테이블의 nIdx에 하면의 불량을 먼저 기록하고 상면의 불량을 엎어서 최종 merge불량 테이블을 만듬.
+
+	int nTotVerifyed[2] = { 0 };
+
+	for (i = 0; i < nTotDef[1]; i++)							// 하면 불량 피스 수
+	{
+		if (m_pPcrInner[1][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcrInner[1][nIdx]->m_pDefPcs[i];		// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// Up+Dn				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxDn = i; // Dn					// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[1]++;
+		}
+	}
+	for (i = 0; i < nTotDef[0]; i++)							// 상면 불량 피스 수
+	{
+		if (m_pPcrInner[0][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcrInner[0][nIdx]->m_pDefPcs[i];		// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// Up+Dn				// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxUp = i;	// Up					// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[0]++;
+		}
+	}
+
+
+	nTotDef[2] = 0;
+	for (i = 0; i < nTotPcs; i++)								// Shot내 총 Piece수
+	{
+		if (pPcrMgr[i].nIdx > -1)	// Up+Dn					// 상하면 Merge [i:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			nTotDef[2]++;										// 상 / 하면 Merge한 총 불량피스수.
+	}
+
+	m_pPcrInner[2][nIdx]->Init(nSerial, nTotDef[2]);			// 제품시리얼, Shot내 총불량 피스수
+
+	int nId[2], Ord;											// [0]: 상면 0~불량피스순서, [1]: 하면 0~불량피스순서
+	idx = 0;													// 마킹순서 0~불량피스수만큼 정하기위해 현시점의 idx를 초기화함.
+	if (nTotDef[2] > 0)											// 상 / 하면 Merge한 총 불량피스수.
+	{
+		for (nPcsId = 0; nPcsId < nTotPcs; nPcsId++)
+		{
+			nId[0] = pPcrMgr[nPcsId].nIdxUp;					// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서 임. nId[0]: 상면에서의 PCR파일순서 인덱스
+			nId[1] = pPcrMgr[nPcsId].nIdxDn;					// 상하면 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서 임. nId[1]: 하면에서의 PCR파일순서 인덱스
+
+			if (nId[0] > -1)
+			{
+				Ord = nId[0];
+				// Cam ID
+				m_pPcrInner[2][nIdx]->m_nCamId = m_pPcrInner[0][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrInner[2][nIdx]->m_pDefPcs[idx] = m_pPcrInner[0][nIdx]->m_pDefPcs[Ord];
+				m_pPcrInner[2][nIdx]->m_pLayer[idx] = m_pPcrInner[0][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrInner[2][nIdx]->m_pDefPos[idx].x = m_pPcrInner[0][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrInner[2][nIdx]->m_pDefPos[idx].y = m_pPcrInner[0][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrInner[2][nIdx]->m_pDefType[idx] = m_pPcrInner[0][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrInner[2][nIdx]->m_pCell[idx] = m_pPcrInner[0][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrInner[2][nIdx]->m_pImgSz[idx] = m_pPcrInner[0][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrInner[2][nIdx]->m_pImg[idx] = m_pPcrInner[0][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrInner[2][nIdx]->m_pMk[idx] = m_pPcrInner[0][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+			else if (nId[1] > -1)
+			{
+				Ord = nId[1];
+				// Cam ID
+				m_pPcrInner[2][nIdx]->m_nCamId = m_pPcrInner[1][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrInner[2][nIdx]->m_pDefPcs[idx] = m_pPcrInner[1][nIdx]->m_pDefPcs[Ord];
+				m_pPcrInner[2][nIdx]->m_pLayer[idx] = m_pPcrInner[1][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrInner[2][nIdx]->m_pDefPos[idx].x = m_pPcrInner[1][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrInner[2][nIdx]->m_pDefPos[idx].y = m_pPcrInner[1][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrInner[2][nIdx]->m_pDefType[idx] = m_pPcrInner[1][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrInner[2][nIdx]->m_pCell[idx] = m_pPcrInner[1][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrInner[2][nIdx]->m_pImgSz[idx] = m_pPcrInner[1][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrInner[2][nIdx]->m_pImg[idx] = m_pPcrInner[1][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrInner[2][nIdx]->m_pMk[idx] = m_pPcrInner[1][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+		}
+	}
+
+	delete[] pPcrMgr;
+
+	return (1); // 1(정상)
+}
+
+int CManagerReelmap::LoadPcrIts(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+#ifndef USE_CAM_MASTER
+	return 0;
+#endif
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Error-LoadPcrIts()"));
+		return 0;
+	}
+
+	if (!m_pPcrIts)
+	{
+		pView->ClrDispMsg();
+		pView->MsgBox(_T("PCR[2]관련 메모리가 할당되지 않았습니다."));
+		return(2);
+	}
+
+	BOOL bDualTestInner;
+	CString sLot, sLayerUp, sLayerDn;
+	if (!pDoc->GetItsSerialInfo(nSerial, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+	{
+		CString str;
+		str.Format(_T("It is trouble to read GetItsSerialInfo()."));
+		pView->MsgBox(str);
+		return FALSE;
+	}
+
+	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	if (bDualTest && bDualTestInner)		// 11 -> 외층 : 양면, 내층 : 양면
+		LoadPcrIts11(nSerial);
+	else if (bDualTest && !bDualTestInner)	// 10 -> 외층 : 양면, 내층 : 단면
+		LoadPcrIts10(nSerial);
+	else if (!bDualTest && bDualTestInner)	// 01 -> 외층 : 단면, 내층 : 양면
+		LoadPcrIts01(nSerial);
+	else 									// 00 -> 외층 : 단면, 내층 : 단면
+		LoadPcrIts00(nSerial);
+
+	return (1); // 1(정상)
+}
+
+void CManagerReelmap::LoadPcrIts11(int nSerial)					// 11 -> 외층 : 양면, 내층 : 양면
+{
+	int i, idx;//, k
+	CString str;
+
+	int nIdx = GetPcrIdx(nSerial);
+
+	m_pPcrIts[nIdx]->m_nIdx = nIdx;								// m_nIdx : From 0 to nTot.....
+	m_pPcrIts[nIdx]->m_nSerial = nSerial;
+
+	// Error Code												// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	if (m_pPcr[2][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[2][nIdx]->m_nErrPnl;
+	else if (m_pPcrInner[2][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcrInner[2][nIdx]->m_nErrPnl;
+	else
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[2][nIdx]->m_nErrPnl;
+
+	// Model
+	m_pPcrIts[nIdx]->m_sModel = m_pPcr[0][nIdx]->m_sModel;
+
+	// Layer
+	m_pPcrIts[nIdx]->m_sLayerOutUp = m_pPcr[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerOutDn = m_pPcr[1][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInUp = m_pPcrInner[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInDn = m_pPcrInner[1][nIdx]->m_sLayer;
+
+	// Lot
+	m_pPcrIts[nIdx]->m_sLot = m_pPcr[0][nIdx]->m_sLot;
+
+	int nTotDef[3] = { 0 };										// [0]: 외층, [1]: 내층, [2]: 내/외층 Merge
+	nTotDef[0] = pDoc->m_pPcr[2][nIdx]->m_nTotDef;				// 외층 불량 피스 수
+	nTotDef[1] = pDoc->m_pPcrInner[2][nIdx]->m_nTotDef;			// 내층 불량 피스 수
+
+	int nTotPcs = m_Master[0].m_pPcsRgn->nTotPcs;
+	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
+
+	int nPcsId;													// nPcsId : CamMaster Pcs Index
+																// pPcrMgr테이블의 nIdx에 내층의 불량을 먼저 기록하고 외층의 불량을 엎어서 최종 merge불량 테이블을 만듬.
+	int nTotVerifyed[2] = { 0 };	
+	for (i = 0; i < nTotDef[1]; i++)							// 내층 불량 피스 수
+	{
+		if (m_pPcrInner[2][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcrInner[2][nIdx]->m_pDefPcs[i];		// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxDn = i; // 내층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[1]++;
+		}
+	}
+	for (i = 0; i < nTotDef[0]; i++)							// 외층 불량 피스 수
+	{
+		if (m_pPcr[2][nIdx]->m_pMk[i] != -2)					// -2 (NoMarking)
+		{
+			nPcsId = m_pPcr[2][nIdx]->m_pDefPcs[i];				// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxUp = i;	// 외층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[0]++;
+		}
+	}
+
+
+	nTotDef[2] = 0;
+	for (i = 0; i < nTotPcs; i++)								// Shot내 총 Piece수
+	{
+		if (pPcrMgr[i].nIdx > -1)	// 외층+내층				// 내외층 Merge [i:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			nTotDef[2]++;										// 내외층 Merge한 총 불량피스수.
+	}
+
+	m_pPcrIts[nIdx]->Init(nSerial, nTotDef[2]);					// 제품시리얼, Shot내 총불량 피스수
+
+	int nId[2], Ord;											// [0]: 외층 0~불량피스순서, [1]: 내층 0~불량피스순서
+	idx = 0;													// 마킹순서 0~불량피스수만큼 정하기위해 현시점의 idx를 초기화함.
+	if (nTotDef[2] > 0)											// 내외층 Merge한 총 불량피스수.
+	{
+		for (nPcsId = 0; nPcsId < nTotPcs; nPcsId++)
+		{
+			nId[0] = pPcrMgr[nPcsId].nIdxUp;					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서 임. nId[0]: 외층에서의 PCR파일순서 인덱스
+			nId[1] = pPcrMgr[nPcsId].nIdxDn;					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서 임. nId[1]: 내층에서의 PCR파일순서 인덱스
+
+			if (nId[0] > -1) // 외층에서의 PCR파일순서 인덱스
+			{
+				Ord = nId[0];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcr[2][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcr[2][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcr[2][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcr[2][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcr[2][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcr[2][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcr[2][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcr[2][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcr[2][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcr[2][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+			else if (nId[1] > -1) // 내층에서의 PCR파일순서 인덱스
+			{
+				Ord = nId[1];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcrInner[2][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcrInner[2][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcrInner[2][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcrInner[2][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcrInner[2][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcrInner[2][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcrInner[2][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcrInner[2][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcrInner[2][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcrInner[2][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+		}
+	}
+	delete[] pPcrMgr;
+}
+
+void CManagerReelmap::LoadPcrIts10(int nSerial) // 10 -> 외층 : 양면, 내층 : 단면
+{
+	int i, idx;//, k
+	CString str;
+
+	int nIdx = GetPcrIdx0(nSerial);
+
+	m_pPcrIts[nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcrIts[nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	if (m_pPcr[2][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[2][nIdx]->m_nErrPnl;
+	else if (m_pPcrInner[0][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcrInner[0][nIdx]->m_nErrPnl;
+	else
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[2][nIdx]->m_nErrPnl;
+
+	// Model
+	m_pPcrIts[nIdx]->m_sModel = m_pPcr[0][nIdx]->m_sModel;
+
+	// Layer
+	m_pPcrIts[nIdx]->m_sLayerOutUp = m_pPcr[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerOutDn = m_pPcr[1][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInUp = m_pPcrInner[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInDn = _T(""); // m_pPcrInner[1][nIdx]->m_sLayer;
+
+											// Lot
+	m_pPcrIts[nIdx]->m_sLot = m_pPcr[0][nIdx]->m_sLot;
+
+	int nTotDef[3] = { 0 };									// [0]: 외층, [1]: 내층, [2]: 내/외층 Merge
+	nTotDef[0] = pDoc->m_pPcr[2][nIdx]->m_nTotDef;			// 외층 불량 피스 수
+	nTotDef[1] = pDoc->m_pPcrInner[0][nIdx]->m_nTotDef;		// 내층 불량 피스 수
+
+	int nTotPcs = m_Master[0].m_pPcsRgn->nTotPcs;
+	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
+
+	int nPcsId;												// nPcsId : CamMaster Pcs Index
+															// pPcrMgr테이블의 nIdx에 내층의 불량을 먼저 기록하고 외층의 불량을 엎어서 최종 merge불량 테이블을 만듬.
+	int nTotVerifyed[2] = { 0 };
+
+	for (i = 0; i < nTotDef[1]; i++)						// 내층 불량 피스 수
+	{
+		if (m_pPcrInner[0][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcrInner[0][nIdx]->m_pDefPcs[i];		// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxDn = i; // 내층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[1]++;
+		}
+	}
+	for (i = 0; i < nTotDef[0]; i++)						// 외층 불량 피스 수
+	{
+		if (m_pPcr[2][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcr[2][nIdx]->m_pDefPcs[i];				// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxUp = i;	// 외층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[0]++;
+		}
+	}
+
+
+	nTotDef[2] = 0;
+	for (i = 0; i < nTotPcs; i++)							// Shot내 총 Piece수
+	{
+		if (pPcrMgr[i].nIdx > -1)	// 외층+내층			// 내외층 Merge [i:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			nTotDef[2]++;									// 내외층 Merge한 총 불량피스수.
+	}
+
+	m_pPcrIts[nIdx]->Init(nSerial, nTotDef[2]);				// 제품시리얼, Shot내 총불량 피스수
+
+	int nId[2], Ord;										// [0]: 외층 0~불량피스순서, [1]: 내층 0~불량피스순서
+	idx = 0;												// 마킹순서 0~불량피스수만큼 정하기위해 현시점의 idx를 초기화함.
+	if (nTotDef[2] > 0)										// 내외층 Merge한 총 불량피스수.
+	{
+		for (nPcsId = 0; nPcsId < nTotPcs; nPcsId++)
+		{
+			nId[0] = pPcrMgr[nPcsId].nIdxUp;				// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서 임. nId[0]: 외층에서의 PCR파일순서 인덱스
+			nId[1] = pPcrMgr[nPcsId].nIdxDn;				// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서 임. nId[1]: 내층에서의 PCR파일순서 인덱스
+
+			if (nId[0] > -1)
+			{
+				Ord = nId[0];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcr[2][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcr[2][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcr[2][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcr[2][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcr[2][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcr[2][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcr[2][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcr[2][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcr[2][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcr[2][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+			else if (nId[1] > -1)
+			{
+				Ord = nId[1];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcrInner[0][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcrInner[0][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcrInner[0][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcrInner[0][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcrInner[0][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcrInner[0][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcrInner[0][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcrInner[0][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcrInner[0][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcrInner[0][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+		}
+	}
+	delete[] pPcrMgr;
+}
+
+void CManagerReelmap::LoadPcrIts01(int nSerial) // 11 -> 외층 : 단면, 내층 : 양면
+{
+	int i, idx;//, k
+	CString str;
+
+	int nIdx = GetPcrIdx0(nSerial);
+
+	m_pPcrIts[nIdx]->m_nIdx = nIdx;							// m_nIdx : From 0 to nTot.....
+	m_pPcrIts[nIdx]->m_nSerial = nSerial;
+
+	// Error Code											// 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+	if (m_pPcr[0][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[0][nIdx]->m_nErrPnl;
+	else if (m_pPcrInner[2][nIdx]->m_nErrPnl < 0)
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcrInner[2][nIdx]->m_nErrPnl;
+	else
+		m_pPcrIts[nIdx]->m_nErrPnl = m_pPcr[0][nIdx]->m_nErrPnl;
+
+	// Model
+	m_pPcrIts[nIdx]->m_sModel = m_pPcr[0][nIdx]->m_sModel;
+
+	// Layer
+	m_pPcrIts[nIdx]->m_sLayerOutUp = m_pPcr[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerOutDn = _T(""); // m_pPcr[1][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInUp = m_pPcrInner[0][nIdx]->m_sLayer;
+	m_pPcrIts[nIdx]->m_sLayerInDn = m_pPcrInner[1][nIdx]->m_sLayer;
+
+	// Lot
+	m_pPcrIts[nIdx]->m_sLot = m_pPcr[0][nIdx]->m_sLot;
+
+	int nTotDef[3] = { 0 };									// [0]: 외층, [1]: 내층, [2]: 내/외층 Merge
+	nTotDef[0] = pDoc->m_pPcr[0][nIdx]->m_nTotDef;			// 외층 불량 피스 수
+	nTotDef[1] = pDoc->m_pPcrInner[2][nIdx]->m_nTotDef;		// 내층 불량 피스 수
+
+	int nTotPcs = m_Master[0].m_pPcsRgn->nTotPcs;
+	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
+
+	int nPcsId;												// nPcsId : CamMaster Pcs Index
+															// pPcrMgr테이블의 nIdx에 내층의 불량을 먼저 기록하고 외층의 불량을 엎어서 최종 merge불량 테이블을 만듬.
+	int nTotVerifyed[2] = { 0 };
+
+	for (i = 0; i < nTotDef[1]; i++)						// 내층 불량 피스 수
+	{
+		if (m_pPcrInner[2][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcrInner[2][nIdx]->m_pDefPcs[i];		// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxDn = i; // 내층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[1]++;
+		}
+	}
+	for (i = 0; i < nTotDef[0]; i++)						// 외층 불량 피스 수
+	{
+		if (m_pPcr[0][nIdx]->m_pMk[i] != -2)				// -2 (NoMarking)
+		{
+			nPcsId = m_pPcr[0][nIdx]->m_pDefPcs[i];				// nPcsId : CamMaster Pcs Index
+			pPcrMgr[nPcsId].nIdx = i;	// 외층+내층			// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			pPcrMgr[nPcsId].nIdxUp = i;	// 외층					// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서임.
+		}
+		else
+		{
+			nTotVerifyed[0]++;
+		}
+	}
+
+
+	nTotDef[2] = 0;
+	for (i = 0; i < nTotPcs; i++)							// Shot내 총 Piece수
+	{
+		if (pPcrMgr[i].nIdx > -1)	// 외층+내층			// 내외층 Merge [i:CamMaster Pcs Index]의 nIdx (0~)는 불량표시순서임.
+			nTotDef[2]++;									// 내외층 Merge한 총 불량피스수.
+	}
+
+	m_pPcrIts[nIdx]->Init(nSerial, nTotDef[2]);				// 제품시리얼, Shot내 총불량 피스수
+
+	int nId[2], Ord;										// [0]: 외층 0~불량피스순서, [1]: 내층 0~불량피스순서
+	idx = 0;												// 마킹순서 0~불량피스수만큼 정하기위해 현시점의 idx를 초기화함.
+	if (nTotDef[2] > 0)										// 내외층 Merge한 총 불량피스수.
+	{
+		for (nPcsId = 0; nPcsId < nTotPcs; nPcsId++)
+		{
+			nId[0] = pPcrMgr[nPcsId].nIdxUp;				// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxUp (0~)는 불량표시순서 임. nId[0]: 외층에서의 PCR파일순서 인덱스
+			nId[1] = pPcrMgr[nPcsId].nIdxDn;				// 내외층 Merge [nPcsId:CamMaster Pcs Index]의 nIdxDn (0~)는 불량표시순서 임. nId[1]: 내층에서의 PCR파일순서 인덱스
+
+			if (nId[0] > -1)
+			{
+				Ord = nId[0];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcr[0][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcr[0][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcr[0][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcr[0][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcr[0][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcr[0][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcr[0][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcr[0][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcr[0][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcr[0][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+			else if (nId[1] > -1)
+			{
+				Ord = nId[1];
+				// Cam ID
+				m_pPcrIts[nIdx]->m_nCamId = m_pPcrInner[2][nIdx]->m_nCamId;
+				// Piece Number
+				m_pPcrIts[nIdx]->m_pDefPcs[idx] = m_pPcrInner[2][nIdx]->m_pDefPcs[Ord];
+				m_pPcrIts[nIdx]->m_pLayer[idx] = m_pPcrInner[2][nIdx]->m_pLayer[Ord];
+				// BadPointPosX
+				m_pPcrIts[nIdx]->m_pDefPos[idx].x = m_pPcrInner[2][nIdx]->m_pDefPos[Ord].x;
+				// BadPointPosY
+				m_pPcrIts[nIdx]->m_pDefPos[idx].y = m_pPcrInner[2][nIdx]->m_pDefPos[Ord].y;
+				// BadName
+				m_pPcrIts[nIdx]->m_pDefType[idx] = m_pPcrInner[2][nIdx]->m_pDefType[Ord];
+				// CellNum
+				m_pPcrIts[nIdx]->m_pCell[idx] = m_pPcrInner[2][nIdx]->m_pCell[Ord];
+				// ImageSize
+				m_pPcrIts[nIdx]->m_pImgSz[idx] = m_pPcrInner[2][nIdx]->m_pImgSz[Ord];
+				// ImageNum
+				m_pPcrIts[nIdx]->m_pImg[idx] = m_pPcrInner[2][nIdx]->m_pImg[Ord];
+				// strMarkingCode : -2 (NoMarking)
+				m_pPcrIts[nIdx]->m_pMk[idx] = m_pPcrInner[2][nIdx]->m_pMk[Ord];
+
+				idx++;
+			}
+		}
+	}
+	delete[] pPcrMgr;
+}
+
+void CManagerReelmap::LoadPcrIts00(int nSerial) // 10 -> 외층 : 단면, 내층 : 단면
+{
+	pView->ClrDispMsg();
+	pView->MsgBox(_T("LoadPCRIts00 - 내외층 모두 단면인 경우는 프로그램이 없습니다."));
+	return;
+}
+
+int CManagerReelmap::GetPcrIdx(int nSerial)
+{
+	if (nSerial <= 0)
+	{
+		pView->ClrDispMsg();
+		AfxMessageBox(_T("Erro-GetPcrIdx()"));
+		return 0;
+	}
+
+	int nIdx = (nSerial - 1) % MAX_PCR_PNL;
+
+	return nIdx;
 }
 
 BOOL CManagerReelmap::UpdateReelmap(int nSerial)
@@ -1536,22 +3450,14 @@ void CManagerReelmap::UpdateRMapDn()
 
 void CManagerReelmap::UpdateRMapAllUp()
 {
-	if (m_pReelMapAllUp)
+	if (m_pReelMapAll)
 	{
-		m_pReelMapAllUp->Write(pView->m_nSerialRmapUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+		m_pReelMapAll->Write(pView->m_nSerialRmapUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 
-		if (m_pReelMap == m_pReelMapAllUp)
+		if (m_pReelMap == m_pReelMapAll)
 		{
 			DuplicateRmap(RMAP_ALLUP);
 		}
-	}
-}
-
-void CManagerReelmap::UpdateRMapAllDn()
-{
-	if (m_pReelMapAllDn)
-	{
-		m_pReelMapAllDn->Write(pView->m_nSerialRmapUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	}
 }
 
@@ -1607,8 +3513,7 @@ void CManagerReelmap::UpdateProcessNum(CString sProcessNum)
 	if (bDualTest)
 	{
 		m_pReelMapDn->UpdateProcessNum(sProcessNum, 1); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
-		m_pReelMapAllUp->UpdateProcessNum(sProcessNum, 2); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
-		m_pReelMapAllDn->UpdateProcessNum(sProcessNum, 3); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+		m_pReelMapAll->UpdateProcessNum(sProcessNum, 2); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	}
 }
 
@@ -1616,16 +3521,10 @@ void CManagerReelmap::GetResult()
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
 
-	//if (m_pReelMapUp)
-	//	m_pReelMapUp->GetResult();
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->GetResult();
-		//if (m_pReelMapDn)
-		//	m_pReelMapDn->GetResult();
-		//if (m_pReelMapAllDn)
-		//	m_pReelMapAllDn->GetResult();
+		if (m_pReelMapAll)
+			m_pReelMapAll->GetResult();
 	}
 	else
 	{
@@ -1635,20 +3534,8 @@ void CManagerReelmap::GetResult()
 
 	if (pDoc->GetTestMode() == MODE_OUTER)
 	{
-		//if (m_pReelMapInnerUp)
-		//	m_pReelMapInnerUp->GetResult();
 		if (m_pReelMapIts)
 			m_pReelMapIts->GetResult();
-
-		//if (pDoc->WorkingInfo.LastJob.bDualTestInner)
-		//{
-		//	if (m_pReelMapInnerDn)
-		//		m_pReelMapInnerDn->GetResult();
-		//	if (m_pReelMapInnerAllUp)
-		//		m_pReelMapInnerAllUp->GetResult();
-		//	if (m_pReelMapInnerAllDn)
-		//		m_pReelMapInnerAllDn->GetResult();
-		//}
 	}
 }
 
@@ -1660,9 +3547,10 @@ void CManagerReelmap::MakeResult()
 	// File Save......
 
 	CString strDestPath;
-	strDestPath.Format(_T("%s%s\\%s\\%s.txt"), pDoc->WorkingInfo.System.sPathOldFile,
-		pDoc->WorkingInfo.LastJob.sModel,
-		pDoc->WorkingInfo.LastJob.sLot,
+	strDestPath.Format(_T("%s%s\\%s\\%s.txt"), 
+		pDoc->WorkingInfo.System.sPathOldFile,
+		ModelInfo.sModel,
+		ModelInfo.sLot,
 		_T("Result"));
 
 	CFileFind cFile;
@@ -1672,11 +3560,10 @@ void CManagerReelmap::MakeResult()
 	//////////////////////////////////////////////////////////
 	// Directory location of Work file
 	CString strData;
-	//strData = m_pDlgMenu05->TxtDataMDS();
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			strData = m_pReelMapAllUp->GetResultTxt();
+		if (m_pReelMapAll)
+			strData = m_pReelMapAll->GetResultTxt();
 	}
 	else
 	{
@@ -1721,9 +3608,10 @@ void CManagerReelmap::MakeResultIts()
 	// File Save......
 
 	CString strDestPath;
-	strDestPath.Format(_T("%s%s\\%s\\%s.txt"), pDoc->WorkingInfo.System.sPathItsFile,
-		pDoc->WorkingInfo.LastJob.sModel,
-		pDoc->WorkingInfo.LastJob.sEngItsCode,
+	strDestPath.Format(_T("%s%s\\%s\\%s.txt"), 
+		pDoc->WorkingInfo.System.sPathItsFile,
+		ModelInfo.sModel,
+		ModelInfo.sItsCode,
 		_T("Result"));
 
 	CFileFind cFile;
@@ -1775,8 +3663,8 @@ void CManagerReelmap::MakeSapp3()
 
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			sSapp3Data = m_pReelMapAllUp->GetSapp3Txt();
+		if (m_pReelMapAll)
+			sSapp3Data = m_pReelMapAll->GetSapp3Txt();
 	}
 	else
 	{
@@ -1784,8 +3672,9 @@ void CManagerReelmap::MakeSapp3()
 			sSapp3Data = m_pReelMapUp->GetSapp3Txt();
 	}
 
-	sPath.Format(_T("%s%9s_%4s_%5s.txt"), pDoc->WorkingInfo.System.sPathSapp3,
-		pDoc->WorkingInfo.LastJob.sLot,
+	sPath.Format(_T("%s%9s_%4s_%5s.txt"), 
+		pDoc->WorkingInfo.System.sPathSapp3,
+		ModelInfo.sLot,
 		pDoc->WorkingInfo.LastJob.sProcessNum,
 		pDoc->WorkingInfo.System.sMcName);
 
@@ -1824,8 +3713,8 @@ BOOL CManagerReelmap::RemakeReelmap()
 		if (m_pReelMapDn)
 			m_pReelMapDn->StartThreadRemakeReelmap();
 
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->StartThreadRemakeReelmap();
+		if (m_pReelMapAll)
+			m_pReelMapAll->StartThreadRemakeReelmap();
 	}
 
 	return TRUE;
@@ -1859,16 +3748,10 @@ void CManagerReelmap::UpdateYieldDn(int nSerial)
 		m_pReelMapDn->UpdateYield(nSerial);
 }
 
-void CManagerReelmap::UpdateYieldAllUp(int nSerial)
+void CManagerReelmap::UpdateYieldAll(int nSerial)
 {
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->UpdateYield(nSerial);
-}
-
-void CManagerReelmap::UpdateYieldAllDn(int nSerial)
-{
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->UpdateYield(nSerial);
+	if (m_pReelMapAll)
+		m_pReelMapAll->UpdateYield(nSerial);
 }
 
 void CManagerReelmap::UpdateYieldInnerUp(int nSerial)
@@ -1883,16 +3766,10 @@ void CManagerReelmap::UpdateYieldInnerDn(int nSerial)
 		m_pReelMapInnerDn->UpdateYield(nSerial);
 }
 
-void CManagerReelmap::UpdateYieldInnerAllUp(int nSerial)
+void CManagerReelmap::UpdateYieldInnerAll(int nSerial)
 {
-	if (m_pReelMapInnerAllUp)
-		m_pReelMapInnerAllUp->UpdateYield(nSerial);
-}
-
-void CManagerReelmap::UpdateYieldInnerAllDn(int nSerial)
-{
-	if (m_pReelMapInnerAllDn)
-		m_pReelMapInnerAllDn->UpdateYield(nSerial);
+	if (m_pReelMapInnerAll)
+		m_pReelMapInnerAll->UpdateYield(nSerial);
 }
 
 void CManagerReelmap::UpdateYieldIts(int nSerial)
@@ -1927,21 +3804,12 @@ void CManagerReelmap::UpdateRMapInnerDn()
 	}
 }
 
-void CManagerReelmap::UpdateRMapInnerAllUp()
+void CManagerReelmap::UpdateRMapInnerAll()
 {
 	if (pDoc->GetTestMode() == MODE_OUTER)
 	{
-		if (m_pReelMapInnerAllUp)
-			m_pReelMapInnerAllUp->Write(pView->m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
-	}
-}
-
-void CManagerReelmap::UpdateRMapInnerAllDn()
-{
-	if (pDoc->GetTestMode() == MODE_OUTER)
-	{
-		if (m_pReelMapInnerAllDn)
-			m_pReelMapInnerAllDn->Write(pView->m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
+		if (m_pReelMapInnerAll)
+			m_pReelMapInnerAll->Write(pView->m_nSerialRmapInnerUpdate); // [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	}
 }
 
@@ -1956,27 +3824,7 @@ int CManagerReelmap::GetPcrIdx0(int nSerial, BOOL bNewLot)
 
 	int nIdx;
 	nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//if (!bNewLot)
-	//{
-	//	if (pDoc->WorkingInfo.LastJob.bLotSep || m_bDoneChgLot)
-	//	{
-	//		if (!m_bDoneChgLot && nSerial <= m_nLotLastShot)
-	//			nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//		else // New Lot...
-	//			nIdx = (m_nLotLastShot + nSerial - 1) % MAX_PCR_PNL;
-	//	}
-	//	else
-	//	{
-	//		nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//	}
-	//}
-	//else
-	//{
-	//	if (WorkingInfo.LastJob.bLotSep || m_bDoneChgLot)
-	//		nIdx = (m_nLotLastShot + nSerial - 1) % MAX_PCR_PNL;
-	//	else
-	//		nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//}
+
 	return nIdx;
 }
 
@@ -1991,27 +3839,7 @@ int CManagerReelmap::GetPcrIdx1(int nSerial, BOOL bNewLot)
 
 	int nIdx;
 	nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//if (!bNewLot)
-	//{
-	//	if (WorkingInfo.LastJob.bLotSep || m_bDoneChgLot)
-	//	{
-	//		if (!m_bDoneChgLot && nSerial <= m_nLotLastShot)
-	//			nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//		else // New Lot...
-	//			nIdx = (m_nLotLastShot + nSerial - 1) % MAX_PCR_PNL;
-	//	}
-	//	else
-	//	{
-	//		nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//	}
-	//}
-	//else
-	//{
-	//	if (WorkingInfo.LastJob.bLotSep || m_bDoneChgLot)
-	//		nIdx = (m_nLotLastShot + nSerial - 1) % MAX_PCR_PNL;
-	//	else
-	//		nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	//}
+
 	return nIdx;
 }
 
@@ -2023,8 +3851,8 @@ CString CManagerReelmap::GetPathReelmapIts()
 
 	sPath = _T("");
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
-	Path[1] = pDoc->WorkingInfo.LastJob.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode; // pDoc->m_sItsCode;
+	Path[1] = ModelInfo.sModel;
+	Path[2] = ModelInfo.sItsCode; // pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return _T("");
@@ -2043,8 +3871,8 @@ BOOL CManagerReelmap::MakeItsReelmapHeader()
 
 	sPath = _T("");
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
-	Path[1] = pDoc->WorkingInfo.LastJob.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode; // pDoc->m_sItsCode;
+	Path[1] = ModelInfo.sModel;
+	Path[2] = ModelInfo.sItsCode; // pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return FALSE;
@@ -2089,8 +3917,8 @@ BOOL CManagerReelmap::MakeItsReelmapHeader()
 	fprintf(fp, "[Info]\n");
 	fprintf(fp, "설  비  명 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.System.sMcName)); if (pRtn) delete pRtn; pRtn = NULL;
 	fprintf(fp, "운  용  자 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.LastJob.sSelUserName)); if (pRtn) delete pRtn; pRtn = NULL;
-	fprintf(fp, "모      델 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.LastJob.sModel)); if (pRtn) delete pRtn; pRtn = NULL;
-	fprintf(fp, " ITS Code  = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.LastJob.sEngItsCode)); if (pRtn) delete pRtn; pRtn = NULL;
+	fprintf(fp, "모      델 = %s\n", pRtn = StrToChar(ModelInfo.sModel)); if (pRtn) delete pRtn; pRtn = NULL;
+	fprintf(fp, " ITS Code  = %s\n", pRtn = StrToChar(ModelInfo.sItsCode)); if (pRtn) delete pRtn; pRtn = NULL;
 	fprintf(fp, "\n");
 
 	fprintf(fp, "Process Code = \n");
@@ -2151,6 +3979,7 @@ BOOL CManagerReelmap::WriteIts(int nItsSerial)
 
 	return FALSE;
 }
+
 //BOOL CManagerReelmap::WriteIts(int nItsSerial)
 //{
 //	if (nItsSerial <= 0)
@@ -2419,16 +4248,16 @@ CString CManagerReelmap::GetItsFileData(int nSerial, int nLayer)
 //		sSide = _T("T");
 //		if (m_pPcr)
 //		{
-//			if (m_pPcr[nIdx])
-//				nTotDefPcs = m_pPcr[nIdx]->m_nTotDef;
+//			if (m_pPcr[0][nIdx])
+//				nTotDefPcs = m_pPcr[0][nIdx]->m_nTotDef;
 //		}
 //		break;
 //	case RMAP_DN:
 //		sSide = _T("B");
 //		if (m_pPcr)
 //		{
-//			if (m_pPcr[nIdx])
-//				nTotDefPcs = m_pPcr[nIdx]->m_nTotDef;
+//			if (m_pPcr[0][nIdx])
+//				nTotDefPcs = m_pPcr[0][nIdx]->m_nTotDef;
 //		}
 //		break;
 //	case RMAP_INNER_UP:
@@ -2436,8 +4265,8 @@ CString CManagerReelmap::GetItsFileData(int nSerial, int nLayer)
 //		sSide = _T("T");
 //		if (m_pPcr)
 //		{
-//			if (m_pPcr[nIdx])
-//				nTotDefPcs = m_pPcr[nIdx]->m_nTotDef;
+//			if (m_pPcr[0][nIdx])
+//				nTotDefPcs = m_pPcr[0][nIdx]->m_nTotDef;
 //		}
 //		break;
 //	case RMAP_INNER_DN:
@@ -2445,8 +4274,8 @@ CString CManagerReelmap::GetItsFileData(int nSerial, int nLayer)
 //		sSide = _T("B");
 //		if (m_pPcr)
 //		{
-//			if (m_pPcr[nIdx])
-//				nTotDefPcs = m_pPcr[nIdx]->m_nTotDef;
+//			if (m_pPcr[0][nIdx])
+//				nTotDefPcs = m_pPcr[0][nIdx]->m_nTotDef;
 //		}
 //		break;
 //	}
@@ -2561,8 +4390,8 @@ BOOL CManagerReelmap::MakeDirIts()
 
 	sItsPath = pDoc->WorkingInfo.System.sPathIts;
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
-	Path[1] = pDoc->WorkingInfo.LastJob.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	Path[1] = ModelInfo.sModel;
+	Path[2] = ModelInfo.sItsCode;
 	//Path[2] = pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
@@ -2662,8 +4491,8 @@ CString CManagerReelmap::GetItsFolderPath()
 	CString sPath = _T("");
 
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
-	Path[1] = pDoc->WorkingInfo.LastJob.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	Path[1] = ModelInfo.sModel;
+	Path[2] = ModelInfo.sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 	{
@@ -2723,7 +4552,7 @@ void CManagerReelmap::DuplicateRmap(int nRmap)
 		sSrcPath = m_pReelMapUp->GetRmapPath(RMAP_UP);
 		break;
 	case RMAP_ALLUP:
-		sSrcPath = m_pReelMapAllUp->GetRmapPath(RMAP_ALLUP);
+		sSrcPath = m_pReelMapAll->GetRmapPath(RMAP_ALLUP);
 		break;
 	case RMAP_ITS:
 		sSrcPath = m_pReelMapUp->GetRmapPath(RMAP_ITS);
@@ -2741,8 +4570,6 @@ void CManagerReelmap::DuplicateRmap(int nRmap)
 				if (!CopyFile((LPCTSTR)sSrcPath, (LPCTSTR)sDstPath, FALSE))
 				{
 					Sleep(500);
-					//strTemp.Format(_T("%s \r\n: Reelmap File Copy Fail"), sSrcPath);
-					//pView->MsgBox(strTemp);
 					if (!CopyFile((LPCTSTR)sSrcPath, (LPCTSTR)sDstPath, FALSE))
 					{
 						return;
@@ -2804,7 +4631,7 @@ BOOL CManagerReelmap::GetPcrInfo(CString sPath, stModelInfo &stInfo)
 	strHeaderErrorInfo = strFileData.Left(nTemp);
 	strFileData.Delete(0, nTemp + 1);
 	nFileSize = nFileSize - nTemp - 1;
-	//m_pPcr[nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
+	//m_pPcr[0][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
 	// Model
 	nTemp = strFileData.Find(_T(','), 0);
@@ -3075,10 +4902,8 @@ void CManagerReelmap::SetUserName(CString sName)
 		m_pReelMapUp->m_sUser = sName;
 	if (m_pReelMapDn)
 		m_pReelMapDn->m_sUser = sName;
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->m_sUser = sName;
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->m_sUser = sName;
+	if (m_pReelMapAll)
+		m_pReelMapAll->m_sUser = sName;
 }
 
 void CManagerReelmap::SetOnePnlLen(double dPnlLen)
@@ -3087,10 +4912,8 @@ void CManagerReelmap::SetOnePnlLen(double dPnlLen)
 		m_pReelMapUp->m_dPnlLen = dPnlLen;
 	if (m_pReelMapDn)
 		m_pReelMapDn->m_dPnlLen = dPnlLen;
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->m_dPnlLen = dPnlLen;
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->m_dPnlLen = dPnlLen;
+	if (m_pReelMapAll)
+		m_pReelMapAll->m_dPnlLen = dPnlLen;
 }
 
 void CManagerReelmap::SetTempPauseLen(double dTempPauseLen)
@@ -3099,10 +4922,8 @@ void CManagerReelmap::SetTempPauseLen(double dTempPauseLen)
 		m_pReelMapUp->m_dTempPauseLen = dTempPauseLen;
 	if (m_pReelMapDn)
 		m_pReelMapDn->m_dTempPauseLen = dTempPauseLen;
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->m_dTempPauseLen = dTempPauseLen;
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->m_dTempPauseLen = dTempPauseLen;
+	if (m_pReelMapAll)
+		m_pReelMapAll->m_dTempPauseLen = dTempPauseLen;
 }
 
 void CManagerReelmap::SetLotCutPosLen(double dLotCutPosLen)
@@ -3111,10 +4932,8 @@ void CManagerReelmap::SetLotCutPosLen(double dLotCutPosLen)
 		m_pReelMapUp->m_dLotCutPosLen = dLotCutPosLen;
 	if (m_pReelMapDn)
 		m_pReelMapDn->m_dLotCutPosLen = dLotCutPosLen;
-	if (m_pReelMapAllUp)
-		m_pReelMapAllUp->m_dLotCutPosLen = dLotCutPosLen;
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->m_dLotCutPosLen = dLotCutPosLen;
+	if (m_pReelMapAll)
+		m_pReelMapAll->m_dLotCutPosLen = dLotCutPosLen;
 }
 
 void CManagerReelmap::SetPathAtBuf()
@@ -3127,10 +4946,8 @@ void CManagerReelmap::SetPathAtBuf()
 	{
 		if (m_pReelMapDn)
 			m_pReelMapDn->SetPathAtBuf();
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->SetPathAtBuf();
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->SetPathAtBuf();
+		if (m_pReelMapAll)
+			m_pReelMapAll->SetPathAtBuf();
 	}
 
 	if (pDoc->GetTestMode() == MODE_OUTER)
@@ -3150,10 +4967,8 @@ void CManagerReelmap::SetCompletedSerial(int nSerial)
 	{
 		if (m_pReelMapDn)
 			m_pReelMapDn->SetCompletedSerial(nSerial);
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->SetCompletedSerial(nSerial);
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->SetCompletedSerial(nSerial);
+		if (m_pReelMapAll)
+			m_pReelMapAll->SetCompletedSerial(nSerial);
 	}
 }
 
@@ -3167,8 +4982,8 @@ CfPoint CManagerReelmap::GetMkPnt(int nSerial, int nMkPcs) // pcr 시리얼, pcr 불
 
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			ptPnt = m_pReelMapAllUp->GetMkPnt(nSerial, nMkPcs);
+		if (m_pReelMapAll)
+			ptPnt = m_pReelMapAll->GetMkPnt(nSerial, nMkPcs);
 	}
 	else
 	{
@@ -3218,19 +5033,20 @@ void CManagerReelmap::LoadCADBufDn(UCHAR *pCADCellImg, long OrgStX, long OrgStY,
 void CManagerReelmap::ClrMkInfo()
 {
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+
+	ClrPcr();
+
 	if (m_pReelMapUp)
 		m_pReelMapUp->Clear();
 	if (bDualTest)
 	{
 		if (m_pReelMapDn)
 			m_pReelMapDn->Clear();
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->Clear();
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->Clear();
+		if (m_pReelMapAll)
+			m_pReelMapAll->Clear();
 	}
 
-	if (m_pReelMap != m_pReelMapUp && m_pReelMap != m_pReelMapDn && m_pReelMap != m_pReelMapAllUp && m_pReelMap != m_pReelMapAllDn)
+	if (m_pReelMap != m_pReelMapUp && m_pReelMap != m_pReelMapDn && m_pReelMap != m_pReelMapAll)
 	{
 		if (m_pReelMap)
 			m_pReelMap->Clear();
@@ -3246,8 +5062,8 @@ void CManagerReelmap::SetPathAtBufUp()
 
 	if (bDualTest)
 	{
-		if (m_pReelMapAllUp)
-			m_pReelMapAllUp->SetPathAtBuf();
+		if (m_pReelMapAll)
+			m_pReelMapAll->SetPathAtBuf();
 	}
 }
 
@@ -3259,8 +5075,6 @@ void CManagerReelmap::SetPathAtBufDn()
 
 	if (m_pReelMapDn)
 		m_pReelMapDn->SetPathAtBuf();
-	if (m_pReelMapAllDn)
-		m_pReelMapAllDn->SetPathAtBuf();
 }
 
 COLORREF CManagerReelmap::GetRgbStcDef(int nDefColor)
@@ -3301,10 +5115,8 @@ void CManagerReelmap::ResetReelmapPath()
 		{
 			if (m_pReelMapInnerDn)
 				m_pReelMapInnerDn->ResetReelmapPath();
-			if (m_pReelMapInnerAllUp)
-				m_pReelMapInnerAllUp->ResetReelmapPath();
-			if (m_pReelMapInnerAllDn)
-				m_pReelMapInnerAllDn->ResetReelmapPath();
+			if (m_pReelMapInnerAll)
+				m_pReelMapInnerAll->ResetReelmapPath();
 		}
 	}
 }
@@ -3319,8 +5131,8 @@ BOOL CManagerReelmap::ChkYield() // 수율 양호 : TRUE , 수율 불량 : FALSE
 
 	if (bDualTest)
 	{
-		if (m_pReelMapAllDn)
-			m_pReelMapAllDn->GetPcsNum(nGood, nBad);
+		if (m_pReelMapAll)
+			m_pReelMapAll->GetPcsNum(nGood, nBad);
 		else
 		{
 			pView->Buzzer(TRUE, 0);
@@ -3413,28 +5225,28 @@ BOOL CManagerReelmap::LoadMstInfo()
 	CString sLot, sLayerUp, sLayerDn;
 	if (ChkModelInfo(0)) // Up
 	{
-		if (bGetCurrentInfoEng)
-		{
-			m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->m_sEngModel,
-				pDoc->m_sEngLayerUp);
-			m_Master[0].LoadMstInfo();
-
-			if (pDoc->GetTestMode() == MODE_OUTER)
-			{
-				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
-				{
-					if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
-					{
-						m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->m_sEngModel,
-							sLayerUp);
-						m_MasterInner[0].LoadMstInfo();
-					}
-				}
-			}
-		}
-		else
+		//if (bGetCurrentInfoEng)
+		//{
+		//	m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//		pDoc->m_sEngModel,
+		//		pDoc->m_sEngLayerUp);
+		//	m_Master[0].LoadMstInfo();
+		//
+		//	if (pDoc->GetTestMode() == MODE_OUTER)
+		//	{
+		//		if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 3))
+		//		{
+		//			if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerUp))
+		//			{
+		//				m_MasterInner[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//					pDoc->m_sEngModel,
+		//					sLayerUp);
+		//				m_MasterInner[0].LoadMstInfo();
+		//			}
+		//		}
+		//	}
+		//}
+		//else
 		{
 			m_Master[0].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 				pDoc->WorkingInfo.CurrModel.sModel,
@@ -3446,31 +5258,31 @@ BOOL CManagerReelmap::LoadMstInfo()
 
 	if (ChkModelInfo(1)) // Dn
 	{
-		if (bGetCurrentInfoEng)
-		{
-			m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-				pDoc->m_sEngModel,
-				pDoc->m_sEngLayerDn,
-				pDoc->m_sEngLayerUp);
-
-			m_Master[1].LoadMstInfo();
-
-			if (pDoc->GetTestMode() == MODE_OUTER)
-			{
-				if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
-				{
-					if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
-					{
-						m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
-							pDoc->m_sEngModel,
-							sLayerDn,
-							sLayerUp);
-						m_MasterInner[1].LoadMstInfo();
-					}
-				}
-			}
-		}
-		else
+		//if (bGetCurrentInfoEng)
+		//{
+		//	m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//		pDoc->m_sEngModel,
+		//		pDoc->m_sEngLayerDn,
+		//		pDoc->m_sEngLayerUp);
+		//
+		//	m_Master[1].LoadMstInfo();
+		//
+		//	if (pDoc->GetTestMode() == MODE_OUTER)
+		//	{
+		//		if (pDoc->GetItsSerialInfo(0, bDualTestInner, sLot, sLayerUp, sLayerDn, 0))
+		//		{
+		//			if (m_MasterInner[0].IsMstSpec(pDoc->WorkingInfo.System.sPathCamSpecDir, pDoc->m_sEngModel, sLayerDn))
+		//			{
+		//				m_MasterInner[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
+		//					pDoc->m_sEngModel,
+		//					sLayerDn,
+		//					sLayerUp);
+		//				m_MasterInner[1].LoadMstInfo();
+		//			}
+		//		}
+		//	}
+		//}
+		//else
 		{
 			m_Master[1].Init(pDoc->WorkingInfo.System.sPathCamSpecDir,
 				pDoc->WorkingInfo.CurrModel.sModel,
@@ -3531,6 +5343,26 @@ void CManagerReelmap::SetAlignPos()
 	}
 }
 
+CString CManagerReelmap::GetMasterLocation()
+{
+	return m_Master[Up].GetMasterLocation();
+}
+
+void CManagerReelmap::SetPinPos(int nCam, CfPoint ptPnt)
+{
+	m_Master[Up].m_pPcsRgn->SetPinPos(nCam, ptPnt);
+}
+
+BOOL CManagerReelmap::IsMstSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
+{
+	return m_Master[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
+}
+
+BOOL CManagerReelmap::IsMstInnerSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
+{
+	return m_MasterInner[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
+}
+
 BOOL CManagerReelmap::SetMstInfo()
 {
 	int i = 0;
@@ -3582,22 +5414,116 @@ BOOL CManagerReelmap::SetMstInfo()
 	return TRUE;
 }
 
-CString CManagerReelmap::GetMasterLocation()
+void CManagerReelmap::SetModelInfo(stJobModel stInfo)
 {
-	return m_Master[Up].GetMasterLocation();
+	ModelInfo = stInfo;
+
+	if (m_pReelMapUp)
+		m_pReelMapUp->SetPath(GetPathReelmap(RMAP_UP));
+	if (m_pReelMapDn)
+		m_pReelMapDn->SetPath(GetPathReelmap(RMAP_DN));
+	if (m_pReelMapAll)
+		m_pReelMapAll->SetPath(GetPathReelmap(RMAP_ALLUP));
+
+	if (m_pReelMapInnerUp)
+		m_pReelMapInnerUp->SetPath(GetPathReelmap(RMAP_INNER_UP));
+	if (m_pReelMapInnerDn)
+		m_pReelMapInnerDn->SetPath(GetPathReelmap(RMAP_INNER_DN));
+	if (m_pReelMapInnerAll)
+		m_pReelMapInnerAll->SetPath(GetPathReelmap(RMAP_INNER_ALLUP));
+
+	if (m_pReelMapIts)
+		m_pReelMapIts->SetPath(GetPathReelmap(RMAP_ITS));
 }
 
-void CManagerReelmap::SetPinPos(int nCam, CfPoint ptPnt)
+CString CManagerReelmap::GetPathReelmap(int nLayer)
 {
-	m_Master[Up].m_pPcsRgn->SetPinPos(nCam, ptPnt);
-}
+	CString sPath = _T("");
+	CString Path[5], str;
 
-BOOL CManagerReelmap::IsMstSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
-{
-	return m_Master[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
-}
+	switch (nLayer)
+	{
+	case RMAP_UP:
+		str = _T("ReelMapDataUp.txt");
+		sPath.Format(_T("%s%s\\%s\\%s\\%s"),
+			pDoc->WorkingInfo.System.sPathOldFile,
+			ModelInfo.sModel,
+			ModelInfo.sLot,
+			ModelInfo.sLayerUp,
+			str);
+		break;
+	case RMAP_ALLUP:
+		str = _T("ReelMapDataAll.txt");
+		sPath.Format(_T("%s%s\\%s\\%s\\%s"), 
+			pDoc->WorkingInfo.System.sPathOldFile,
+			ModelInfo.sModel,
+			ModelInfo.sLot,
+			ModelInfo.sLayerUp,
+			str);
+		break;
+	case RMAP_DN:
+		str = _T("ReelMapDataDn.txt");
+		sPath.Format(_T("%s%s\\%s\\%s\\%s"), 
+			pDoc->WorkingInfo.System.sPathOldFile,
+			ModelInfo.sModel,
+			ModelInfo.sLot,
+			ModelInfo.sLayerDn,
+			str);
+		break;
+	case RMAP_ALLDN:
+		str = _T("ReelMapDataAll.txt");
+		sPath.Format(_T("%s%s\\%s\\%s\\%s"), 
+			pDoc->WorkingInfo.System.sPathOldFile,
+			ModelInfo.sModel,
+			ModelInfo.sLot,
+			ModelInfo.sLayerDn,
+			str);
+		break;
+	case RMAP_INNER_UP:
+		str = _T("ReelMapDataUp.txt");
+		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
+		Path[1] = ModelInfo.sModel;
+		Path[2] = ModelInfo.sItsCode;
+		Path[3] = ModelInfo.sLotInner;
+		Path[4] = ModelInfo.sLayerUpInner;
+		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
+		break;
+	case RMAP_INNER_DN:
+		str = _T("ReelMapDataDn.txt");
+		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
+		Path[1] = ModelInfo.sModel;
+		Path[2] = ModelInfo.sItsCode;
+		Path[3] = ModelInfo.sLotInner;
+		Path[4] = ModelInfo.sLayerDnInner;
+		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
+		break;
+	case RMAP_INNER_ALLUP:
+		str = _T("ReelMapDataAll.txt");
+		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
+		Path[1] = ModelInfo.sModel;
+		Path[2] = ModelInfo.sItsCode;
+		Path[3] = ModelInfo.sLotInner;
+		Path[4] = ModelInfo.sLayerUpInner;
+		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
+		break;
+	case RMAP_INNER_ALLDN:
+		str = _T("ReelMapDataAll.txt");
+		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
+		Path[1] = ModelInfo.sModel;
+		Path[2] = ModelInfo.sItsCode;
+		Path[3] = ModelInfo.sLotInner;
+		Path[4] = ModelInfo.sLayerDnInner;
+		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
+		break;
+	case RMAP_ITS:
+		str = _T("ReelMapDataIts.txt");
+		sPath.Format(_T("%s%s\\%s\\%s"), 
+			pDoc->WorkingInfo.System.sPathItsFile,
+			ModelInfo.sModel,
+			ModelInfo.sItsCode,
+			str);
+		break;
+	}
 
-BOOL CManagerReelmap::IsMstInnerSpec(CString sSpecFolderPath, CString  sModel, CString sLayer)
-{
-	return m_MasterInner[0].IsMstSpec(sSpecFolderPath, sModel, sLayer);
+	return sPath;
 }

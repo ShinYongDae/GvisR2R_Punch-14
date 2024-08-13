@@ -111,7 +111,7 @@ BOOL CDlgCammasterinfoStrpcs::OnInitDialog()
 
 	CString sPath, sMstLoc, sModel, sLayer;
 	//sMstLoc = pDoc->m_Master[0].GetMasterLocation();
-	sMstLoc = pView->m_mgrReelmap->GetMasterLocation();
+	sMstLoc = pView->m_pMgrReelmap->GetMasterLocation();
 	//sModel = pDoc->m_Master[0].GetModel();
 	//sLayer = pDoc->m_Master[0].GetLayer();
 	sModel = pDoc->WorkingInfo.CurrModel.sModel;

@@ -533,6 +533,10 @@ public:
 	int LoadPcrAllDn (CString sPath);	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
 
 	int IsOfflineFolder(); // 0 : Not exist, 1 : Exist only Up, 2 : Exist only Dn, 3 : Exist Up and Dn
+	BOOL GetAoiInfoUp(int nSerial, stModelInfo& stInfo);
+	BOOL GetAoiInfoDn(int nSerial, stModelInfo& stInfo);
+	BOOL CheckModelInfo(stModelInfo& stInfo);
+	void ChangeWorkingInfoModel();
 
 // 재정의입니다.
 public:

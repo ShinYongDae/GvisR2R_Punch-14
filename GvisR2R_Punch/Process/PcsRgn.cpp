@@ -93,8 +93,8 @@ void CPcsRgn::SetMkPnt(int nCam)
 		{
 			for(nR=0; nR<nRow; nR++)
 			{
-				ptRef.x = pView->m_mgrReelmap->m_stPcsMk[idx].X;
-				ptRef.y = pView->m_mgrReelmap->m_stPcsMk[idx].Y;
+				ptRef.x = pView->m_pMgrReelmap->m_stPcsMk[idx].X;
+				ptRef.y = pView->m_pMgrReelmap->m_stPcsMk[idx].Y;
 				//ptRef.x = pDoc->m_Master[0].m_stPcsMk[idx].X;
 				//ptRef.y = pDoc->m_Master[0].m_stPcsMk[idx].Y;
 
@@ -113,8 +113,8 @@ void CPcsRgn::SetMkPnt(int nCam)
 		{
 			for(nR=0; nR<nRow; nR++)
 			{
-				ptRef.x = pView->m_mgrReelmap->m_stPcsMk[idx].X;
-				ptRef.y = pView->m_mgrReelmap->m_stPcsMk[idx].Y;
+				ptRef.x = pView->m_pMgrReelmap->m_stPcsMk[idx].X;
+				ptRef.y = pView->m_pMgrReelmap->m_stPcsMk[idx].Y;
 				//ptRef.x = pDoc->m_Master[0].m_stPcsMk[idx].X;
 				//ptRef.y = pDoc->m_Master[0].m_stPcsMk[idx].Y;
 
@@ -201,7 +201,7 @@ BOOL CPcsRgn::GetMkMatrix(int nPcsId, int &nC, int &nR)
 	if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 	{
 		//switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
-		switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+		switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 		{
 		case 0:
 			break;
@@ -246,7 +246,7 @@ BOOL CPcsRgn::GetMkMatrix(int nPcsId, int &nStrip, int &nC, int &nR) // nStrip:0
 
 	if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 	{
-		switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+		switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 		{
 		case 0:
 			break;

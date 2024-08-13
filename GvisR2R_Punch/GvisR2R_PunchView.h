@@ -88,6 +88,8 @@
 
 #define MAX_THREAD				39
 
+#define MAX_MGR_REELMAP			3
+
 namespace Read2dIdx
 {
 	typedef enum Index {
@@ -359,7 +361,9 @@ public:
 public:
 	CGvisR2R_PunchDoc* GetDocument() const;
 
-	CManagerReelmap *m_mgrReelmap;
+	int m_nCurrMgrReelmap;
+	CManagerReelmap *m_pMgrReelmap;
+	CManagerReelmap *m_mgrReelmap[MAX_MGR_REELMAP];
 	int m_nDebugStep; 	void DispThreadTick();
 
 	int m_nMkStrip[2][MAX_STRIP]; // [nCam][nStrip] - [좌/우][] : 스트립에 펀칭한 피스 수 count
@@ -367,7 +371,7 @@ public:
 	int m_nTotMk[2], m_nCurMk[2]; // [0]: 좌 MK, [1]: 우 MK
 	int m_nPrevTotMk[2], m_nPrevCurMk[2]; // [0]: 좌 MK, [1]: 우 MK
 	int m_nPrevStepAuto, m_nPrevMkStAuto;
-	BOOL bPcrInShare[2], bPcrInShareVs[2];
+	BOOL m_bPcrInShare[2], m_bPcrInShareVs[2];
 	BOOL m_bRcvSig[_SigInx::_EndIdx];
 	//stRcvSig m_stRcvSig;
 	CMpDevice* m_pMpe;
@@ -1260,12 +1264,15 @@ public:
 	void LoadSerial();
 
 	BOOL ChangeModel(int nSerial=0);
+	BOOL ChangeLot(int nSerial=0);
 	void InitMgr();
 	void CloseMgr();
 	void CreateMgrReelmap();
 	void CloseMgrReelmap();
 	void ResetMkInfo(); // CAD 데이터 리로딩 (AOI-UpDn)
-	void ModelChange(); // (AOI-UpDn) 
+	void ModelChange(); // (AOI-UpDn)  - 릴맵의 헤더 파일을 생성
+	void ChangeMgrReelmap(int nCurrMgrReelmap, stModelInfo stInfo);
+	BOOL MpeWrite(CString strRegAddr, long lData, BOOL bCheck = FALSE); // bCheck : Write 후 Read하여 값이 정확히 쓰여졌는지 확인
 
 // 재정의입니다.
 public:

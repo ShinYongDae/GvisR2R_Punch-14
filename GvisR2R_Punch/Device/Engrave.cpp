@@ -4668,7 +4668,7 @@ void CEngrave::SetEngItsCode()
 	char cData[BUFFER_DATA_SIZE];
 
 	SocketData.nMsgID = _stItemInx::_EngItsCode;
-	StringToChar(pDoc->WorkingInfo.LastJob.sEngItsCode, cData);
+	StringToChar(pDoc->WorkingInfo.CurrModel.sItsCode, cData);
 	sprintf(SocketData.strData, "%s", cData);
 	SendCommand(SocketData);
 }

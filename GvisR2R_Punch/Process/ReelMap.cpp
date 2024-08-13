@@ -30,6 +30,8 @@ CReelMap::CReelMap(int nLayer, int nPnl, int nPcs, CWnd* pParent /*=NULL*/)
 	int nC, nR;
 	m_pParent = pParent;
 
+	m_sPath = _T("");
+
 	m_nLayer = -1;
 	nTotPnl = nPnl;
 	nTotPcs = nPcs;
@@ -176,6 +178,9 @@ CReelMap::CReelMap(int nLayer, int nPnl, int nPcs, CWnd* pParent /*=NULL*/)
 	for (nC = 0; nC < FIX_PCS_COL_MAX; nC++)
 		for (nR = 0; nR < FIX_PCS_ROW_MAX; nR++)
 			m_FixPcsRpt[nC][nR] = 0;
+
+	for (int k = 0; k < MAX_PCR_PNL; k++)
+		m_pPcr[k] = NULL;
 }
 
 CReelMap::~CReelMap()
@@ -492,37 +497,37 @@ BOOL CReelMap::Write(int nSerial)
 		pDoc->SetItsSerialInfo(nSerial);
 
 	int nIdx = pDoc->GetPcrIdx1(nSerial, pDoc->m_bNewLotShare[1]);
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
-	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_pMgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
 	int nTotDefPcs = 0;
 
 	if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 	{
 		nLayer = m_nLayer - RMAP_UP;
 
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
 	}
 	else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 	{
 		nLayer = m_nLayer - RMAP_INNER_UP;
 
-		if (pDoc->m_pPcrInner[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcrInner[nLayer])
 		{
-			if (pDoc->m_pPcrInner[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcrInner[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_nTotDef;
 		}
 	}
 	else if (m_nLayer == RMAP_ITS)
 	{
-		if (pDoc->m_pPcrIts)
+		if (pView->m_pMgrReelmap->m_pPcrIts)
 		{
-			if (pDoc->m_pPcrIts[nIdx])
-				nTotDefPcs = pDoc->m_pPcrIts[nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcrIts[nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nTotDef;
 		}
 	}
 	else
@@ -547,34 +552,34 @@ BOOL CReelMap::Write(int nSerial)
 		{
 			nLayer = m_nLayer - RMAP_UP;
 
-			if (pDoc->m_pPcr[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
 					//switch (pDoc->m_Master[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
-					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
-						nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 						break;
 					case 1:
-						nPcsId = pDoc->MirrorLR(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorLR(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					case 2:
-						nPcsId = pDoc->MirrorUD(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorUD(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					case 3:
-						nPcsId = pDoc->Rotate180(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->Rotate180(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					default:
-						nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 						break;
 					}
 				}
 				else
-					nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 
-				nDefCode = pDoc->m_pPcr[nLayer][nIdx]->m_pDefType[i];
+				nDefCode = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefType[i];
 
 				nC = int(nPcsId / nNodeY);
 				if (nC % 2)	// 홀수.
@@ -594,33 +599,33 @@ BOOL CReelMap::Write(int nSerial)
 		{
 			nLayer = m_nLayer - RMAP_INNER_UP;
 
-			if (pDoc->m_pPcrInner[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
+			if (pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
-					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
-						nPcsId = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
 						break;
 					case 1:
-						nPcsId = pDoc->MirrorLR(pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorLR(pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					case 2:
-						nPcsId = pDoc->MirrorUD(pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorUD(pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					case 3:
-						nPcsId = pDoc->Rotate180(pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->Rotate180(pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i]);
 						break;
 					default:
-						nPcsId = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
 						break;
 					}
 				}
 				else
-					nPcsId = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefPcs[i];
 
-				nDefCode = pDoc->m_pPcrInner[nLayer][nIdx]->m_pDefType[i];
+				nDefCode = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_pDefType[i];
 
 				nC = int(nPcsId / nNodeY);
 				if (nC % 2)	// 홀수.
@@ -638,33 +643,33 @@ BOOL CReelMap::Write(int nSerial)
 		}
 		else if (m_nLayer == RMAP_ITS)
 		{
-			if (pDoc->m_pPcrIts[nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
+			if (pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
 			{
 				if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 				{
-					switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+					switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 					{
 					case 0:
-						nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 						break;
 					case 1:
-						nPcsId = pDoc->MirrorLR(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorLR(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 						break;
 					case 2:
-						nPcsId = pDoc->MirrorUD(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->MirrorUD(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 						break;
 					case 3:
-						nPcsId = pDoc->Rotate180(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+						nPcsId = pDoc->Rotate180(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 						break;
 					default:
-						nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+						nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 						break;
 					}
 				}
 				else
-					nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 
-				nDefCode = pDoc->m_pPcrIts[nIdx]->m_pDefType[i];
+				nDefCode = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefType[i];
 
 				nC = int(nPcsId / nNodeY);
 				if (nC % 2)	// 홀수.
@@ -710,7 +715,7 @@ BOOL CReelMap::Write(int nSerial)
 			{
 				nLayer = m_nLayer - RMAP_UP;
 
-				if (pDoc->m_pPcr[nLayer][nIdx]->m_nErrPnl == -1 || pDoc->m_pPcr[nLayer][nIdx]->m_nErrPnl == -2)
+				if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nErrPnl == -1 || pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nErrPnl == -2)
 				{
 					nDefCode = DEF_LIGHT;
 					m_pPnlBuf[nSerial - 1][nR][nC] = (short)nDefCode;
@@ -722,7 +727,7 @@ BOOL CReelMap::Write(int nSerial)
 			{
 				nLayer = m_nLayer - RMAP_INNER_UP;
 
-				if (pDoc->m_pPcrInner[nLayer][nIdx]->m_nErrPnl == -1 || pDoc->m_pPcrInner[nLayer][nIdx]->m_nErrPnl == -2)
+				if (pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_nErrPnl == -1 || pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_nErrPnl == -2)
 				{
 					nDefCode = DEF_LIGHT;
 					m_pPnlBuf[nSerial - 1][nR][nC] = (short)nDefCode;
@@ -732,7 +737,7 @@ BOOL CReelMap::Write(int nSerial)
 			}
 			else if (m_nLayer == RMAP_ITS)
 			{
-				if (pDoc->m_pPcrIts[nIdx]->m_nErrPnl == -1 || pDoc->m_pPcrIts[nIdx]->m_nErrPnl == -2)
+				if (pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nErrPnl == -1 || pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nErrPnl == -2)
 				{
 					nDefCode = DEF_LIGHT;
 					m_pPnlBuf[nSerial - 1][nR][nC] = (short)nDefCode;
@@ -904,7 +909,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 		}
 	}
 
-	if(!pView->m_mgrReelmap->m_pPcsRgn)
+	if(!pView->m_pMgrReelmap->m_pPcsRgn)
 	{
 		pView->MsgBox(_T("PCS RGN Error."));
 		return FALSE;
@@ -964,8 +969,8 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 	int k, i, nR, nC, nP, nInc=0;
 	//int nCol, nRow;
 	int nLoadPnl, nDefCode;
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol; // 10
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow; // 5
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol; // 10
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow; // 5
 	int nActionCode;
 
 	for(k=nTotPnl-1; k>=0; k--) // k = 7 ~ 0
@@ -1073,16 +1078,16 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				{
 					if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 					{
-						//m_pPnlDefNum[k] = pDoc->m_pPcr[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
-						m_pPnlDefNum[k] = pDoc->m_pPcr[m_nLayer][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						//m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcr[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcr[m_nLayer][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					}
 					else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 					{
-						//m_pPnlDefNum[k] = pDoc->m_pPcrInner[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
-						m_pPnlDefNum[k] = pDoc->m_pPcrInner[m_nLayer - RMAP_INNER_UP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						//m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrInner[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrInner[m_nLayer - RMAP_INNER_UP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					}
 					else if (m_nLayer == RMAP_ITS)
-						m_pPnlDefNum[k] = pDoc->m_pPcrIts[pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrIts[pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					else
 						return 0;
 				}
@@ -1107,17 +1112,17 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 				{
 					if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 					{
-						//m_pPnlDefNum[k] = pDoc->m_pPcr[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
-						m_pPnlDefNum[k] = pDoc->m_pPcr[m_nLayer][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						//m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcr[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcr[m_nLayer][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					}
 					else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 					{
-						//m_pPnlDefNum[k] = pDoc->m_pPcrInner[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
-						if(pDoc->m_pPcrInner)
-							m_pPnlDefNum[k] = pDoc->m_pPcrInner[m_nLayer - RMAP_INNER_UP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						//m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrInner[RMAP_ALLUP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						if(pView->m_pMgrReelmap->m_pPcrInner)
+							m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrInner[m_nLayer - RMAP_INNER_UP][pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					}
 					else if (m_nLayer == RMAP_ITS)
-						m_pPnlDefNum[k] = pDoc->m_pPcrIts[pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
+						m_pPnlDefNum[k] = pView->m_pMgrReelmap->m_pPcrIts[pDoc->GetPcrIdx1(nLoadPnl)]->m_nTotDef;
 					else
 						return 0;
 				}
@@ -1146,17 +1151,17 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 						{
 							if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 							{
-								nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+								nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 								//nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
 							}
 							else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 							{
-								nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
+								nActionCode = pView->m_pMgrReelmap->m_pMasterInfoInner->nActionCode;
 								//nActionCode = pDoc->m_MasterInner[0].MasterInfo.nActionCode;
 							}
 							else if (m_nLayer == RMAP_ITS)
 							{
-								nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+								nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 								//nActionCode = pDoc->m_Master[0].MasterInfo.nActionCode;
 							}
 
@@ -1206,15 +1211,15 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 							{								
 								if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 								{
-									nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+									nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 								}
 								else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 								{
-									nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
+									nActionCode = pView->m_pMgrReelmap->m_pMasterInfoInner->nActionCode;
 								}
 								else if (m_nLayer == RMAP_ITS)
 								{
-									nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+									nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 								}
 
 								//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1281,15 +1286,15 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 									{
 										if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 										{
-											nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+											nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 										}
 										else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 										{
-											nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
+											nActionCode = pView->m_pMgrReelmap->m_pMasterInfoInner->nActionCode;
 										}
 										else if (m_nLayer == RMAP_ITS)
 										{
-											nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+											nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 										}
 
 										//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1335,11 +1340,11 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 								{
 									if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 									{
-										nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+										nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 									}
 									else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
 									{
-										nActionCode = pView->m_mgrReelmap->m_pMasterInfoInner->nActionCode;
+										nActionCode = pView->m_pMgrReelmap->m_pMasterInfoInner->nActionCode;
 
 										// 내층 릴맵 Display 좌우반전 시킴....
 										if(nActionCode == 0)
@@ -1353,7 +1358,7 @@ BOOL CReelMap::Disp(int nMkPnl, BOOL bDumy)
 									}
 									else if (m_nLayer == RMAP_ITS)
 									{
-										nActionCode = pView->m_mgrReelmap->m_pMasterInfo->nActionCode;
+										nActionCode = pView->m_pMgrReelmap->m_pMasterInfo->nActionCode;
 									}
 
 									//switch (pDoc->m_Master[1].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
@@ -1701,29 +1706,29 @@ CString CReelMap::GetYieldPath(int nRmap)
 		case RMAP_INNER_UP:
 			str = _T("YieldUp.txt");
 			sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
-				pDoc->WorkingInfo.LastJob.sInnerLotUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp,
+				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
+				pDoc->WorkingInfo.CurrModel.sLotInner, pDoc->WorkingInfo.CurrModel.sLayerUpInner,
 				str);
 			break;
 		case RMAP_INNER_DN:
 			str = _T("YieldDn.txt");
 			sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
-				pDoc->WorkingInfo.LastJob.sInnerLotUp, pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
+				pDoc->WorkingInfo.CurrModel.sLotInner, pDoc->WorkingInfo.CurrModel.sLayerDnInner,
 				str);
 			break;
 		case RMAP_INNER_ALLUP:
 			str = _T("YieldAll.txt");
 			sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
-				pDoc->WorkingInfo.LastJob.sInnerLotUp, pDoc->WorkingInfo.LastJob.sInnerLayerUp,
+				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
+				pDoc->WorkingInfo.CurrModel.sLotInner, pDoc->WorkingInfo.CurrModel.sLayerUpInner,
 				str);
 			break;
 		case RMAP_INNER_ALLDN:
 			str = _T("YieldAll.txt");
 			sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
-				pDoc->WorkingInfo.LastJob.sInnerLotUp, pDoc->WorkingInfo.LastJob.sInnerLayerDn,
+				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
+				pDoc->WorkingInfo.CurrModel.sLotInner, pDoc->WorkingInfo.CurrModel.sLayerDnInner,
 				str);
 			break;
 		case RMAP_INOUTER_UP:
@@ -1733,7 +1738,7 @@ CString CReelMap::GetYieldPath(int nRmap)
 		case RMAP_ITS:
 			str = _T("YieldIts.txt");
 			sPath.Format(_T("%s%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode, //pDoc->m_sItsCode,
+				pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode, //pDoc->m_sItsCode,
 				str);
 			break;
 		}
@@ -1955,8 +1960,8 @@ int CReelMap::GetLastSerial()
 
 void CReelMap::SetFixPcs(int nSerial)
 {
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 	//int nNodeX = pDoc->m_Master[0].m_pPcsRgn->nCol;
 	//int nNodeY = pDoc->m_Master[0].m_pPcsRgn->nRow;
 	int nR, nC, nDefCode;
@@ -2023,8 +2028,8 @@ void CReelMap::ClrFixPcs(int nCol, int nRow)
 BOOL CReelMap::IsFixPcs(int nSerial, int &Col, int &Row)
 {
 	BOOL bRtn = FALSE;
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 
 	BOOL bOn = pDoc->WorkingInfo.LastJob.bContFixDef;
 	int nRange = _tstoi(pDoc->WorkingInfo.LastJob.sNumRangeFixDef);
@@ -2086,8 +2091,8 @@ BOOL CReelMap::IsFixPcs(int nSerial, int &Col, int &Row)
 BOOL CReelMap::IsFixPcs(int nSerial, int* pCol, int* pRow, int &nTot, BOOL &bCont) // nTot : total of PCS Over nJudge
 {
 	BOOL bRtn = FALSE;
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 
 	BOOL bOn = pDoc->WorkingInfo.LastJob.bContFixDef;
 	int nRange = _tstoi(pDoc->WorkingInfo.LastJob.sNumRangeFixDef);
@@ -2190,33 +2195,33 @@ BOOL CReelMap::MakeDir()
 		str = _T("ReelMapDataUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_DN:
 		str = _T("ReelMapDataDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INOUTER_UP:
 		break;
@@ -2226,7 +2231,7 @@ BOOL CReelMap::MakeDir()
 		str = _T("ReelMapDataIts.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = _T("");
 		Path[4] = _T("");
 		break;
@@ -2305,33 +2310,33 @@ BOOL CReelMap::MakeDirRmap()
 		str = _T("YieldUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_DN:
 		str = _T("YieldDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INOUTER_UP:
 		break;
@@ -2341,7 +2346,7 @@ BOOL CReelMap::MakeDirRmap()
 		str = _T("YieldIts.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = _T("");
 		Path[4] = _T("");
 		break;
@@ -2420,33 +2425,33 @@ CString CReelMap::MakeDirRmapRestore()
 		str = _T("ReelMapDataUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_DN:
 		str = _T("ReelMapDataDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INOUTER_UP:
 		break;
@@ -2456,7 +2461,7 @@ CString CReelMap::MakeDirRmapRestore()
 		str = _T("ReelMapDataIts.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = _T("");
 		Path[4] = _T("");
 		break;
@@ -2614,7 +2619,7 @@ BOOL CReelMap::MakeDir(CString sModel, CString sLayer, CString sLot)
 //		str = _T("YieldUp.txt");
 //		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 //		Path[1] = sModel;
-//		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+//		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 //		Path[3] = sLot;
 //		Path[4] = sLayer;
 //		break;
@@ -2622,7 +2627,7 @@ BOOL CReelMap::MakeDir(CString sModel, CString sLayer, CString sLot)
 //		str = _T("YieldDn.txt");
 //		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 //		Path[1] = sModel;
-//		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+//		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 //		Path[3] = sLot;
 //		Path[4] = sLayer;
 //		break;
@@ -2630,7 +2635,7 @@ BOOL CReelMap::MakeDir(CString sModel, CString sLayer, CString sLot)
 //		str = _T("YieldAll.txt");
 //		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 //		Path[1] = sModel;
-//		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+//		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 //		Path[3] = sLot;
 //		Path[4] = sLayer;
 //		break;
@@ -2638,7 +2643,7 @@ BOOL CReelMap::MakeDir(CString sModel, CString sLayer, CString sLot)
 //		str = _T("YieldAll.txt");
 //		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 //		Path[1] = sModel;
-//		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+//		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 //		Path[3] = sLot;
 //		Path[4] = sLayer;
 //		break;
@@ -2650,7 +2655,7 @@ BOOL CReelMap::MakeDir(CString sModel, CString sLayer, CString sLot)
 //		str = _T("YieldIts.txt");
 //		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 //		Path[1] = Path[1] = sModel;
-//		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+//		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 //		Path[3] = _T("");
 //		Path[4] = _T("");
 //		break;
@@ -2782,7 +2787,7 @@ CString CReelMap::MakeDirRmapRestore(CString sModel, CString sLayer, CString sLo
 		str = _T("YieldUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = sLot;
 		Path[4] = sLayer;
 		break;
@@ -2790,7 +2795,7 @@ CString CReelMap::MakeDirRmapRestore(CString sModel, CString sLayer, CString sLo
 		str = _T("YieldDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = sLot;
 		Path[4] = sLayer;
 		break;
@@ -2798,7 +2803,7 @@ CString CReelMap::MakeDirRmapRestore(CString sModel, CString sLayer, CString sLo
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = sLot;
 		Path[4] = sLayer;
 		break;
@@ -2806,7 +2811,7 @@ CString CReelMap::MakeDirRmapRestore(CString sModel, CString sLayer, CString sLo
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = sLot;
 		Path[4] = sLayer;
 		break;
@@ -2818,7 +2823,7 @@ CString CReelMap::MakeDirRmapRestore(CString sModel, CString sLayer, CString sLo
 		str = _T("YieldIts.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = Path[1] = sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = _T("");
 		Path[4] = _T("");
 		break;
@@ -3005,49 +3010,49 @@ CString CReelMap::GetRmapPath(int nRmap)
 		str = _T("ReelMapDataUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_DN:
 		str = _T("ReelMapDataDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INOUTER_UP:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerUp,
 			str);
 		break;
 	case RMAP_INOUTER_DN:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerDn,
 			str);
 		break;
@@ -3056,7 +3061,7 @@ CString CReelMap::GetRmapPath(int nRmap)
 		str = _T("ReelMapDataIts.txt");
 		sPath.Format(_T("%s%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
 			pDoc->WorkingInfo.CurrModel.sModel,
-			pDoc->WorkingInfo.LastJob.sEngItsCode,	//pDoc->m_sItsCode,
+			pDoc->WorkingInfo.CurrModel.sItsCode,	//pDoc->m_sItsCode,
 			str);
 		break;
 	}
@@ -3143,8 +3148,8 @@ BOOL CReelMap::GetNodeXYonRmap(int &nNodeX, int &nNodeY, CString sPath)
 
 	if (!nNodeX || !nNodeY)
 	{
-		nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol; // on Cam
-		nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow; // on Cam
+		nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol; // on Cam
+		nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow; // on Cam
 	}
 
 	return TRUE;
@@ -3246,49 +3251,49 @@ void CReelMap::RestoreReelmap()
 		str = _T("ReelMapDataUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_DN:
 		str = _T("ReelMapDataDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INOUTER_UP:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerUp,
 			str);
 		break;
 	case RMAP_INOUTER_DN:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerDn,
 			str);
 		break;
@@ -3296,7 +3301,7 @@ void CReelMap::RestoreReelmap()
 		pDoc->GetCurrentInfoEng();
 		str = _T("ReelMapDataIts.txt");
 		sPath.Format(_T("%s%s\\%s\\%s"), pDoc->WorkingInfo.System.sPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,	//pDoc->m_sItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,	//pDoc->m_sItsCode,
 			str);
 		break;
 	}
@@ -3442,8 +3447,8 @@ BOOL CReelMap::ReloadReelmap(int nTo)
 	TCHAR sep[] = { _T(",/;\r\n\t") };
 	TCHAR szData[MAX_PATH];
 
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 	int nTotPcs = nNodeX * nNodeY;
 	int nStripPcs = nTotPcs / 4;
 
@@ -3655,33 +3660,33 @@ BOOL CReelMap::MakeDirYield(CString sPath)
 		str = _T("YieldUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_DN:
 		str = _T("YieldDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("YieldAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		break;
 	case RMAP_INOUTER_UP:
 		break;
@@ -3691,7 +3696,7 @@ BOOL CReelMap::MakeDirYield(CString sPath)
 		str = _T("YieldIts.txt");
 		Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 		Path[3] = _T("");
 		Path[4] = _T("");
 		break;
@@ -3836,8 +3841,8 @@ BOOL CReelMap::WriteYield(int nSerial, CString sPath)
 	int dwStart = GetTickCount();
 	int nNodeX = 0, nNodeY = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 #endif
 	CString sDefNum, strData;
 	int nPnl, nRow, nCol, nDefCode, nStrip;
@@ -4109,8 +4114,8 @@ BOOL CReelMap::MakeHeader(CString sPath)
 	char* pRtn = NULL;
 	int nNodeX = 0, nNodeY = 0, i = 0, k = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 #endif
 
 	fprintf(fp, "[Info]\n");
@@ -4194,7 +4199,7 @@ CString CReelMap::GetPathReelmapIts()
 	sPath = _T("");
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode; // pDoc->m_sItsCode;
+	Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode; // pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return _T("");
@@ -4214,7 +4219,7 @@ BOOL CReelMap::MakeItsReelmapHeader()
 	sPath = _T("");
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode; // pDoc->m_sItsCode;
+	Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode; // pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return FALSE;
@@ -4252,15 +4257,15 @@ BOOL CReelMap::MakeItsReelmapHeader()
 	char* pRtn = NULL;
 	int nNodeX = 0, nNodeY = 0, i = 0, k = 0;
 #ifdef USE_CAM_MASTER
-	nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
+	nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
 #endif
 
 	fprintf(fp, "[Info]\n");
 	fprintf(fp, "설  비  명 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.System.sMcName)); if (pRtn) delete pRtn; pRtn = NULL;
 	fprintf(fp, "운  용  자 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.LastJob.sSelUserName)); if (pRtn) delete pRtn; pRtn = NULL;
 	fprintf(fp, "모      델 = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.CurrModel.sModel)); if (pRtn) delete pRtn; pRtn = NULL;
-	fprintf(fp, " ITS Code  = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.LastJob.sEngItsCode)); if (pRtn) delete pRtn; pRtn = NULL;
+	fprintf(fp, " ITS Code  = %s\n", pRtn = StrToChar(pDoc->WorkingInfo.CurrModel.sItsCode)); if (pRtn) delete pRtn; pRtn = NULL;
 	//fprintf(fp, " ITS Code  = %s\n", pRtn = StrToChar(pDoc->m_sItsCode)); if (pRtn) delete pRtn; pRtn = NULL;
 	fprintf(fp, "\n");
 	fprintf(fp, "Process Code = \n");
@@ -4351,15 +4356,15 @@ BOOL CReelMap::WriteIts(int nItsSerial)
 	}
 
 	int nIdx = pDoc->GetPcrIdx0(nItsSerial);
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;//int nNodeX = pDoc->m_MasterInner[0].m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;//int nNodeY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow;
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;//int nNodeX = pDoc->m_MasterInner[0].m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;//int nNodeY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow;
 	//int nStripY = pDoc->m_MasterInner[0].m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
-	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
+	int nStripY = pView->m_pMgrReelmap->m_pPcsRgn->nRow / MAX_STRIP_NUM; // Strip(1~4);
 	int nTotDefPcs = 0;
-	if (pDoc->m_pPcrIts)
+	if (pView->m_pMgrReelmap->m_pPcrIts)
 	{
-		if (pDoc->m_pPcrIts[nIdx])
-			nTotDefPcs = pDoc->m_pPcrIts[nIdx]->m_nTotDef;
+		if (pView->m_pMgrReelmap->m_pPcrIts[nIdx])
+			nTotDefPcs = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nTotDef;
 	}
 
 	short **pPnlBuf;
@@ -4377,34 +4382,34 @@ BOOL CReelMap::WriteIts(int nItsSerial)
 
 	for (i = 0; i < nTotDefPcs; i++)
 	{
-		if (pDoc->m_pPcrIts[nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
+		if (pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
 		{
 			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 			{
 				//switch (pDoc->m_MasterInner[0].MasterInfo.nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
-				switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+				switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 				{
 				case 0:
-					nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 					break;
 				case 1:
-					nPcsId = pDoc->MirrorLR(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->MirrorLR(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 					break;
 				case 2:
-					nPcsId = pDoc->MirrorUD(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->MirrorUD(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 					break;
 				case 3:
-					nPcsId = pDoc->Rotate180(pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->Rotate180(pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i]);
 					break;
 				default:
-					nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 					break;
 				}
 			}
 			else
-				nPcsId = pDoc->m_pPcrIts[nIdx]->m_pDefPcs[i];
+				nPcsId = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefPcs[i];
 
-			nDefCode = pDoc->m_pPcrIts[nIdx]->m_pDefType[i];
+			nDefCode = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_pDefType[i];
 
 			nC = int(nPcsId / nNodeY);
 			if (nC % 2)	// 홀수.
@@ -4442,7 +4447,7 @@ BOOL CReelMap::WriteIts(int nItsSerial)
 			nR = (nNodeY - 1) - nCol;
 			nC = nRow;
 
-			if (pDoc->m_pPcrIts[nIdx]->m_nErrPnl == -1 || pDoc->m_pPcrIts[nIdx]->m_nErrPnl == -2)
+			if (pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nErrPnl == -1 || pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nErrPnl == -2)
 			{
 				nDefCode = DEF_LIGHT;
 				m_pPnlBuf[nItsSerial - 1][nR][nC] = (short)nDefCode;
@@ -4536,11 +4541,11 @@ CString CReelMap::GetItsFileData(int nSerial, int nLayer) // RMAP_UP, RMAP_DN, R
 {
 	CString sPath = pDoc->GetItsPath(nSerial, nLayer);
 	CString str = _T(""), sSide = _T(""), sTemp = _T(""), sItsData = _T("");
-	CString sItsCode = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	CString sItsCode = pDoc->WorkingInfo.CurrModel.sItsCode;
 
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
-	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_pMgrReelmap->m_pPcsRgn->nRow / 4; // Strip(1~4);
 	int nIdx = pDoc->GetPcrIdx0(nSerial);
 
 	int nTotDefPcs = 0;
@@ -4549,46 +4554,46 @@ CString CReelMap::GetItsFileData(int nSerial, int nLayer) // RMAP_UP, RMAP_DN, R
 	{
 	case RMAP_UP:
 		sSide = _T("T");
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
 		break;
 	case RMAP_DN:
 		sSide = _T("B");
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
 		break;
 	case RMAP_INNER_UP:
 		nLayer = RMAP_UP;
 		sSide = _T("T");
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
-		//if (pDoc->m_pPcrInner[0])
+		//if (pView->m_pMgrReelmap->m_pPcrInner[0])
 		//{
-		//	if (pDoc->m_pPcrInner[0][nIdx])
-		//		nTotDefPcs = pDoc->m_pPcrInner[0][nIdx]->m_nTotDef;
+		//	if (pView->m_pMgrReelmap->m_pPcrInner[0][nIdx])
+		//		nTotDefPcs = pView->m_pMgrReelmap->m_pPcrInner[0][nIdx]->m_nTotDef;
 		//}
 		break;
 	case RMAP_INNER_DN:
 		nLayer = RMAP_DN;
 		sSide = _T("B");
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
-		//if (pDoc->m_pPcrInner[1])
+		//if (pView->m_pMgrReelmap->m_pPcrInner[1])
 		//{
-		//	if (pDoc->m_pPcrInner[1][nIdx])
-		//		nTotDefPcs = pDoc->m_pPcrInner[1][nIdx]->m_nTotDef;
+		//	if (pView->m_pMgrReelmap->m_pPcrInner[1][nIdx])
+		//		nTotDefPcs = pView->m_pMgrReelmap->m_pPcrInner[1][nIdx]->m_nTotDef;
 		//}
 		break;
 	}
@@ -4703,7 +4708,7 @@ BOOL CReelMap::MakeDirIts()
 	sItsPath = pDoc->WorkingInfo.System.sPathIts;
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return FALSE;
@@ -5902,49 +5907,49 @@ CString CReelMap::GetIpPath()
 		str = _T("ReelMapDataUp.txt");
 		Path[0] = pDoc->WorkingInfo.System.sIpPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_DN:
 		str = _T("ReelMapDataDn.txt");
 		Path[0] = pDoc->WorkingInfo.System.sIpPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLUP:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sIpPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerUp;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerUpInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INNER_ALLDN:
 		str = _T("ReelMapDataAll.txt");
 		Path[0] = pDoc->WorkingInfo.System.sIpPathItsFile;
 		Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-		Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-		Path[3] = pDoc->WorkingInfo.LastJob.sInnerLotUp;
-		Path[4] = pDoc->WorkingInfo.LastJob.sInnerLayerDn;
+		Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
+		Path[3] = pDoc->WorkingInfo.CurrModel.sLotInner;
+		Path[4] = pDoc->WorkingInfo.CurrModel.sLayerDnInner;
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), Path[0], Path[1], Path[2], Path[3], Path[4], str);
 		break;
 	case RMAP_INOUTER_UP:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sIpPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerUp,
 			str);
 		break;
 	case RMAP_INOUTER_DN:
 		str = _T("ReelMapDataIO.txt");
 		sPath.Format(_T("%s%s\\%s\\%s\\%s\\%s"), pDoc->WorkingInfo.System.sIpPathItsFile,
-			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.LastJob.sEngItsCode,
+			pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sItsCode,
 			pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLayerDn,
 			str);
 		break;
@@ -5953,7 +5958,7 @@ CString CReelMap::GetIpPath()
 		str = _T("ReelMapDataIts.txt");
 		sPath.Format(_T("%s%s\\%s\\%s"), pDoc->WorkingInfo.System.sIpPathItsFile,
 			pDoc->WorkingInfo.CurrModel.sModel,
-			pDoc->WorkingInfo.LastJob.sEngItsCode,	//pDoc->m_sItsCode,
+			pDoc->WorkingInfo.CurrModel.sItsCode,	//pDoc->m_sItsCode,
 			str);
 		break;
 	}
@@ -6180,19 +6185,19 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 	MakeHeader(sPath);
 
 	int nIdx = pDoc->GetPcrIdx1(nSerial, pDoc->m_bNewLotShare[1]);
-	int nNodeX = pView->m_mgrReelmap->m_pPcsRgn->nCol;
-	int nNodeY = pView->m_mgrReelmap->m_pPcsRgn->nRow;
-	int nStripY = pView->m_mgrReelmap->m_pPcsRgn->nRow / MAX_STRIP; // Strip(1~4);
+	int nNodeX = pView->m_pMgrReelmap->m_pPcsRgn->nCol;
+	int nNodeY = pView->m_pMgrReelmap->m_pPcsRgn->nRow;
+	int nStripY = pView->m_pMgrReelmap->m_pPcsRgn->nRow / MAX_STRIP; // Strip(1~4);
 	int nTotDefPcs = 0;
 
 	if (m_nLayer == RMAP_UP || m_nLayer == RMAP_DN || m_nLayer == RMAP_ALLUP || m_nLayer == RMAP_ALLDN)
 	{
 		nLayer = m_nLayer - RMAP_UP;
 
-		if (pDoc->m_pPcr[nLayer])
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer])
 		{
-			if (pDoc->m_pPcr[nLayer][nIdx])
-				nTotDefPcs = pDoc->m_pPcr[nLayer][nIdx]->m_nTotDef;
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx])
+				nTotDefPcs = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nTotDef;
 		}
 	}
 	else if (m_nLayer == RMAP_INNER_UP || m_nLayer == RMAP_INNER_DN || m_nLayer == RMAP_INNER_ALLUP || m_nLayer == RMAP_INNER_ALLDN)
@@ -6200,19 +6205,19 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 		return FALSE;
 		//nLayer = m_nLayer - RMAP_INNER_UP;
 
-		//if (pDoc->m_pPcrInner[nLayer])
+		//if (pView->m_pMgrReelmap->m_pPcrInner[nLayer])
 		//{
-		//	if (pDoc->m_pPcrInner[nLayer][nIdx])
-		//		nTotDefPcs = pDoc->m_pPcrInner[nLayer][nIdx]->m_nTotDef;
+		//	if (pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx])
+		//		nTotDefPcs = pView->m_pMgrReelmap->m_pPcrInner[nLayer][nIdx]->m_nTotDef;
 		//}
 	}
 	else if (m_nLayer == RMAP_ITS)
 	{
 		return FALSE;
-		//if (pDoc->m_pPcrIts)
+		//if (pView->m_pMgrReelmap->m_pPcrIts)
 		//{
-		//	if (pDoc->m_pPcrIts[nIdx])
-		//		nTotDefPcs = pDoc->m_pPcrIts[nIdx]->m_nTotDef;
+		//	if (pView->m_pMgrReelmap->m_pPcrIts[nIdx])
+		//		nTotDefPcs = pView->m_pMgrReelmap->m_pPcrIts[nIdx]->m_nTotDef;
 		//}
 	}
 	else
@@ -6235,33 +6240,33 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 	{
 		nLayer = m_nLayer - RMAP_UP;
 
-		if (pDoc->m_pPcr[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
+		if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pMk[i] != -2) // -2 (NoMarking)
 		{
 			if (pDoc->WorkingInfo.System.bStripPcsRgnBin)	// DTS용
 			{
-				switch (pView->m_mgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
+				switch (pView->m_pMgrReelmap->m_pMasterInfo->nActionCode)	// 0 : Rotation / Mirror 적용 없음(CAM Data 원본), 1 : 좌우 미러, 2 : 상하 미러, 3 : 180 회전, 4 : 270 회전(CCW), 5 : 90 회전(CW)
 				{
 				case 0:
-					nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 					break;
 				case 1:
-					nPcsId = pDoc->MirrorLR(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->MirrorLR(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 					break;
 				case 2:
-					nPcsId = pDoc->MirrorUD(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->MirrorUD(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 					break;
 				case 3:
-					nPcsId = pDoc->Rotate180(pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
+					nPcsId = pDoc->Rotate180(pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i]);
 					break;
 				default:
-					nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+					nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 					break;
 				}
 			}
 			else
-				nPcsId = pDoc->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
+				nPcsId = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefPcs[i];
 
-			nDefCode = pDoc->m_pPcr[nLayer][nIdx]->m_pDefType[i];
+			nDefCode = pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_pDefType[i];
 
 			nC = int(nPcsId / nNodeY);
 			if (nC % 2)	// 홀수.
@@ -6311,7 +6316,7 @@ BOOL CReelMap::WriteOnOffline(int nSerial)
 			nC = nRow;							// 릴맵상의 Col
 
 			nLayer = m_nLayer - RMAP_UP;
-			if (pDoc->m_pPcr[nLayer][nIdx]->m_nErrPnl == -1 || pDoc->m_pPcr[nLayer][nIdx]->m_nErrPnl == -2)
+			if (pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nErrPnl == -1 || pView->m_pMgrReelmap->m_pPcr[nLayer][nIdx]->m_nErrPnl == -2)
 			{
 				nDefCode = DEF_LIGHT;
 				m_pPnlBuf[nSerial - 1][nR][nC] = (short)nDefCode;
@@ -6763,7 +6768,7 @@ int CReelMap::LoadPCR(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Erro
 
 			m_pPcr[nIdx]->m_pLayer[i] = 0; // Up
 
-										   // BadPointPosX
+			// BadPointPosX
 			nTemp = strFileData.Find(',', 0);
 			strBadPointPosX = strFileData.Left(nTemp);
 			strFileData.Delete(0, nTemp + 1);
@@ -6821,13 +6826,18 @@ int CReelMap::LoadPCR(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Erro
 	return (1); // 1(정상)
 }
 
+int CReelMap::LoadPCRAll(int nSerial)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
+{
+	return 1;
+}
+
 CString CReelMap::GetItsFileData(int nSerial) // RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
 {
 	CPcsRgn* pPcsRgn = ((CManagerReelmap*)m_pParent)->m_Master[0].m_pPcsRgn;
 
 	CString sPath = GetItsPath(nSerial);
 	CString str = _T(""), sSide = _T(""), sTemp = _T(""), sItsData = _T("");
-	CString sItsCode = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	CString sItsCode = pDoc->WorkingInfo.CurrModel.sItsCode;
 	//CString sItsCode = pDoc->m_sItsCode;
 
 	int nNodeX = pPcsRgn->nCol;
@@ -6986,7 +6996,7 @@ CString CReelMap::GetItsPath(int nSerial)	// RMAP_UP, RMAP_DN, RMAP_INNER_UP, RM
 	CString sPath, str;
 	CString sItsFolderPath = GetItsFolderPath();
 	CString sTime = GetTimeIts();
-	CString sItsCode = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	CString sItsCode = pDoc->WorkingInfo.CurrModel.sItsCode;
 
 	switch (m_nLayer)
 	{
@@ -7041,8 +7051,8 @@ CString CReelMap::GetItsFolderPath()
 	CString sPath = _T("");
 
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
-	Path[1] = pDoc->WorkingInfo.LastJob.sModel;
-	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
+	Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 	{
@@ -7050,8 +7060,8 @@ CString CReelMap::GetItsFolderPath()
 		{
 			if (pDoc->GetCurrentInfoEng())
 			{
-				pDoc->WorkingInfo.LastJob.sEngItsCode = pDoc->m_sItsCode;
-				Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
+				pDoc->WorkingInfo.CurrModel.sItsCode = pDoc->m_sItsCode;
+				Path[2] = pDoc->WorkingInfo.CurrModel.sItsCode;
 			}
 		}
 
@@ -8337,4 +8347,9 @@ int CReelMap::GetPcrIdx(int nSerial)
 	int nIdx = (nSerial - 1) % MAX_PCR_PNL;
 
 	return nIdx;
+}
+
+void CReelMap::SetPath(CString sPath)
+{
+	m_sPath = sPath;
 }

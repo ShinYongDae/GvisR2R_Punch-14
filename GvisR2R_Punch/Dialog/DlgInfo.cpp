@@ -576,7 +576,7 @@ void CDlgInfo::Disp()
 	myStcData[14].SetText(pDoc->WorkingInfo.LastJob.sCustomNeedRatio);
 	str.Format(_T("%d"), pDoc->WorkingInfo.LastJob.nVerifyPeriod);
 	myStcData[15].SetText(str);
-	myStcData[16].SetText(pDoc->WorkingInfo.LastJob.sEngItsCode);		// IDC_STC_17	ITS코드
+	myStcData[16].SetText(pDoc->WorkingInfo.CurrModel.sItsCode);		// IDC_STC_17	ITS코드
 	myStcData[17].SetText(pDoc->WorkingInfo.LastJob.sCurrentShotNum);	// IDC_STC_41	Shot수 현재값
 	myStcData[18].SetText(pDoc->WorkingInfo.LastJob.sSettingShotNum);	// IDC_STC_43	Shot수 설정값
 	str.Format(_T("%d"), pDoc->WorkingInfo.LastJob.nAlarmTimeAoi);

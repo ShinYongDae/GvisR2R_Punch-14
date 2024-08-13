@@ -82,13 +82,15 @@ class CReelMap : public CWnd
 	int m_nTotPcs, m_nGoodPcs, m_nBadPcs, m_nDef[MAX_DEF];	// [DefCode] : Total Num.
 	int m_nDefStrip[MAX_STRIP_NUM], m_nDefPerStrip[MAX_STRIP_NUM][MAX_DEF];
 	int m_nStripOut[MAX_STRIP_NUM], m_nTotStOut;
-	CString m_sPathShare, m_sPathBuf, m_sIpPath;
-	CString m_sPathYield;
 	//double m_dAdjRatio; // Master Image의 Pixel 해상도에 따른 Reelmap에서의 식별용 간격 비율.
 	int m_nIdxDefInfo;	// MAX_DEFINFO에 들어가는 정보의 Index.
 	int m_nWritedSerial; // In Share folder Serial.
 	BOOL m_bContFixDef;
 	int m_nBeforeSerial;
+
+	CString m_sPathShare, m_sPathBuf, m_sIpPath;
+	CString m_sPathYield;
+	CString m_sPath;
 
 	//int m_nCntFixPcs;
 
@@ -213,8 +215,8 @@ public:
 	int GetStripOut(int nStrip);
 	void SetFixPcs(int nSerial);
 
-	BOOL m_bThreadAliveRemakeReelmap, m_bRtnThreadRemakeReelmap;
 	CString m_sPathOnThread;
+	BOOL m_bThreadAliveRemakeReelmap, m_bRtnThreadRemakeReelmap;
 	CThreadTask m_ThreadTaskRemakeReelmap; // CThreadTask class, handles the threading code
 	BOOL RemakeReelmap();
 	void StartThreadRemakeReelmap();
@@ -307,6 +309,7 @@ public:
 	CWnd* m_pParent;
 	CDataMarking* m_pPcr[MAX_PCR_PNL];	//릴맵화면표시를 위한 데이터	// [0]:AOI-Up , [1]:AOI-Dn , [2]:AOI-AllUp , [3]:AOI-AllDn
 	int LoadPCR(int nSerial);
+	int LoadPCRAll(int nSerial);
 	CfPoint GetMkPnt(int nSerial, int nMkPcs);
 	void CropCadImg(int nIdxMkInfo, int nSerial, int nIdxDef);
 	void CropCadImg(short cell, short cx, short cy, int BufID);
@@ -320,7 +323,6 @@ public:
 	CString GetItsFileData(int nSerial); // RMAP_UP, RMAP_DN, RMAP_INNER_UP, RMAP_INNER_DN
 	CString GetTimeIts();
 
-
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CReelMap)
@@ -329,6 +331,8 @@ public:
 // Implementation
 public:
 	virtual ~CReelMap();
+
+	void SetPath(CString sPath);
 
 	// Generated message map functions
 protected:

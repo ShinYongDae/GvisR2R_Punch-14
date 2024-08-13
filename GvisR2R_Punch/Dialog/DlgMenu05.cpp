@@ -4669,7 +4669,7 @@ int CDlgMenu05::LoadPCRDnFromMk(int nSerial)	// return : 2(Failed), 1(Á¤»ó), -1(
 
 			pDoc->m_pPcr[1][nIdx]->m_pLayer[i] = 1; // Dn
 
-											  // BadPointPosX
+			// BadPointPosX
 			nTemp = strFileData.Find(',', 0);
 			strBadPointPosX = strFileData.Left(nTemp);
 			strFileData.Delete(0, nTemp + 1);

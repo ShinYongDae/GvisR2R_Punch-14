@@ -12,7 +12,9 @@
 #include "../Device/MotionParam.h"
 
 
-#define TEST_MODE		1
+//#define TEST_MODE		1
+
+
 
 #ifndef MAX_STRIP
 	#define MAX_STRIP				4
@@ -1016,7 +1018,8 @@ struct stModelInfo
 struct stJobModel
 {
 	CString sModel, sLayerUp, sLayerDn, sLot, sItsCode;
-	int nTestMode;
+	CString sLayerUpInner, sLayerDnInner, sLotInner;
+	int nTestMode, nTestModeInner;
 
 	stJobModel()
 	{
@@ -1026,7 +1029,13 @@ struct stJobModel
 		sLayerUp = _T("");
 		sLayerDn = _T("");
 		nTestMode = 0;
+		sLotInner = _T("");
+		sLayerUpInner = _T("");
+		sLayerDnInner = _T("");
+		nTestModeInner = 0;
 	}
+
+	~stJobModel(){}	
 
 	void Reset() 
 	{
@@ -1036,7 +1045,28 @@ struct stJobModel
 		sLayerUp = _T("");
 		sLayerDn = _T("");
 		nTestMode = 0;
+		sLotInner = _T("");
+		sLayerUpInner = _T("");
+		sLayerDnInner = _T("");
+		nTestModeInner = 0;
 	}
+
+	stJobModel& stJobModel::operator=(stJobModel& Info)
+	{
+		sModel = Info.sModel;
+		sItsCode = Info.sItsCode;
+		sLot = Info.sLot;
+		sLayerUp = Info.sLayerUp;
+		sLayerDn = Info.sLayerDn;
+		nTestMode = Info.nTestMode;
+		sLotInner = Info.sLotInner;
+		sLayerUpInner = Info.sLayerUpInner;
+		sLayerDnInner = Info.sLayerDnInner;
+		nTestModeInner = Info.nTestModeInner;
+
+		return *this;
+	}
+
 };
 
 struct stWorkingInfo
@@ -2004,9 +2034,5 @@ struct stListBuf
 	}
 
 };
-
-
-
-
 
 #endif // !defined(AFX_GLOBALDEFINE_H_INCLUDED_)
