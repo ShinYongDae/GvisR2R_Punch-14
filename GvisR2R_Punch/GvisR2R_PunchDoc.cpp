@@ -8791,17 +8791,17 @@ void CGvisR2R_PunchDoc::SetLastSerial(int nSerial)
 	}
 }
 
-void CGvisR2R_PunchDoc::UpdateYieldOnRmap()
-{
-	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
-
-	pView->m_bTHREAD_REELMAP_YIELD_UP = TRUE; pDoc->SetStatus(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_UP"), pView->m_bTHREAD_REELMAP_YIELD_UP); // UpdateReelmapYieldUp(); // Yield Reelmap
-	if (bDualTest)
-	{
-		pView->m_bTHREAD_REELMAP_YIELD_DN = TRUE; pDoc->SetStatus(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_DN"), pView->m_bTHREAD_REELMAP_YIELD_DN); // UpdateReelmapYieldDn(); // Yield Reelmap
-	}
-	Sleep(100);
-}
+//void CGvisR2R_PunchDoc::UpdateYieldOnRmap()
+//{
+//	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTest;
+//
+//	pView->m_bTHREAD_REELMAP_YIELD_UP = TRUE; pDoc->SetStatus(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_UP"), pView->m_bTHREAD_REELMAP_YIELD_UP); // UpdateReelmapYieldUp(); // Yield Reelmap
+//	if (bDualTest)
+//	{
+//		pView->m_bTHREAD_REELMAP_YIELD_DN = TRUE; pDoc->SetStatus(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_DN"), pView->m_bTHREAD_REELMAP_YIELD_DN); // UpdateReelmapYieldDn(); // Yield Reelmap
+//	}
+//	Sleep(100);
+//}
 
 void CGvisR2R_PunchDoc::UpdateYieldUp(int nSerial)
 {
@@ -14549,115 +14549,115 @@ BOOL CGvisR2R_PunchDoc::LoadStatus()
 	else
 		pView->m_bTHREAD_SHIFT2MK = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_UP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_UP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_UP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_UP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_UP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_UP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_DN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_DN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_DN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_DN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_DN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_DN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_ALLUP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_ALLUP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_ALLUP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_ALLUP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_ALLUP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_ALLUP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_ALLDN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_ALLDN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_ALLDN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_ALLDN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_ALLDN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_ALLDN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_UP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_UP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_UP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_UP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_UP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_UP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_DN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_DN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_DN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_DN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_DN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_DN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_ALLUP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_ALLUP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLUP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_ALLDN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_REELMAP_INNER_ALLDN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_REELMAP_INNER_ALLDN = FALSE;
 
 	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_DISP_DEF_INNER"), NULL, szData, sizeof(szData), sPath))
 		pView->m_bTHREAD_DISP_DEF_INNER = _ttoi(szData) ? TRUE : FALSE;
 	else
 		pView->m_bTHREAD_DISP_DEF_INNER = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATAE_YIELD[0]"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATAE_YIELD[0] = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATAE_YIELD[0] = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATAE_YIELD[0]"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATAE_YIELD[0] = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATAE_YIELD[0] = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATAE_YIELD[1]"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATAE_YIELD[1] = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATAE_YIELD[1] = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATAE_YIELD[1]"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATAE_YIELD[1] = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATAE_YIELD[1] = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_UP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_YIELD_UP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_YIELD_UP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_UP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_YIELD_UP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_YIELD_UP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_DN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_YIELD_DN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_YIELD_DN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_DN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_YIELD_DN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_YIELD_DN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_ALLUP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_YIELD_ALLUP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_YIELD_ALLUP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_ALLUP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_YIELD_ALLUP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_YIELD_ALLUP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_ALLDN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_UPDATE_YIELD_ALLDN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_UPDATE_YIELD_ALLDN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_UPDATE_YIELD_ALLDN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_UPDATE_YIELD_ALLDN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_UPDATE_YIELD_ALLDN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_UP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_REELMAP_YIELD_UP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_REELMAP_YIELD_UP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_UP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_REELMAP_YIELD_UP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_REELMAP_YIELD_UP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_DN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_REELMAP_YIELD_DN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_REELMAP_YIELD_DN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_DN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_REELMAP_YIELD_DN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_REELMAP_YIELD_DN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ALLUP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_REELMAP_YIELD_ALLUP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_REELMAP_YIELD_ALLUP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ALLUP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_REELMAP_YIELD_ALLUP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_REELMAP_YIELD_ALLUP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ALLDN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_REELMAP_YIELD_ALLDN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_REELMAP_YIELD_ALLDN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ALLDN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_REELMAP_YIELD_ALLDN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_REELMAP_YIELD_ALLDN = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ITS"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_REELMAP_YIELD_ITS = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_REELMAP_YIELD_ITS = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_REELMAP_YIELD_ITS"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_REELMAP_YIELD_ITS = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_REELMAP_YIELD_ITS = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_MAKE_ITS_FILE_UP"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_MAKE_ITS_FILE_UP = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_MAKE_ITS_FILE_UP = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_MAKE_ITS_FILE_UP"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_MAKE_ITS_FILE_UP = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_MAKE_ITS_FILE_UP = FALSE;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_MAKE_ITS_FILE_DN"), NULL, szData, sizeof(szData), sPath))
-		pView->m_bTHREAD_MAKE_ITS_FILE_DN = _ttoi(szData) ? TRUE : FALSE;
-	else
-		pView->m_bTHREAD_MAKE_ITS_FILE_DN = FALSE;
+	//if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_MAKE_ITS_FILE_DN"), NULL, szData, sizeof(szData), sPath))
+	//	pView->m_bTHREAD_MAKE_ITS_FILE_DN = _ttoi(szData) ? TRUE : FALSE;
+	//else
+	//	pView->m_bTHREAD_MAKE_ITS_FILE_DN = FALSE;
 
 	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("bTHREAD_MK[0]"), NULL, szData, sizeof(szData), sPath))
 		pView->m_bTHREAD_MK[0] = _ttoi(szData) ? TRUE : FALSE;
@@ -14689,7 +14689,7 @@ BOOL CGvisR2R_PunchDoc::LoadStatus()
 	else
 		pView->m_nStepTHREAD_DISP_DEF_INNER = 0;
 
-	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("nSerialRmapUpdate"), NULL, szData, sizeof(szData), sPath))
+	if (0 < ::GetPrivateProfileString(_T("Thread"), _T("nSnTHREAD_UPDATE_REELMAP"), NULL, szData, sizeof(szData), sPath))
 		pView->m_nSerialRmapUpdate = _ttoi(szData);
 	else
 		pView->m_nSerialRmapUpdate = 0;

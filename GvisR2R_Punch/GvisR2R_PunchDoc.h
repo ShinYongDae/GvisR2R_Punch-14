@@ -431,7 +431,7 @@ public:
 	double GetEngraveBuffInitPos();
 
 	BOOL DirectoryExists(LPCTSTR szPath);
-	void UpdateYieldOnRmap();
+	//void UpdateYieldOnRmap();
 	void SetTestMode(int nMode);
 	int GetTestMode();
 	int GetNextTestMode();
