@@ -14,8 +14,6 @@
 
 //#define TEST_MODE		1
 
-
-
 #ifndef MAX_STRIP
 	#define MAX_STRIP				4
 #endif
@@ -29,7 +27,7 @@
 #ifdef TEST_MODE
 	#define TEST_SHOT				2
 	#define PATH_REELMAP			_T("C:\\R2RSet\\Test\\ReelMap.txt")
-//#define PATH_REELMAP			_T("C:\\R2RSet\\Test\\ReelMapData.txt")
+	//#define PATH_REELMAP			_T("C:\\R2RSet\\Test\\ReelMapData.txt")
 	#define PATH_REELMAP_UP			PATH_REELMAP	//_T("C:\\R2RSet\\Test\\ReelMapDataUp.txt")
 	#define PATH_REELMAP_DN			PATH_REELMAP	//_T("C:\\R2RSet\\Test\\ReelMapDataDn.txt")
 	#define PATH_REELMAP_ALL_UP		PATH_REELMAP	//_T("C:\\R2RSet\\Test\\ReelMapDataAllUp.txt")
@@ -60,7 +58,7 @@
 	//#define USE_ENGRAVE
 	//#define USE_DTS
 
-	#define USE_CAM_MASTER
+	//#define USE_CAM_MASTER
 	//#define	USE_NMC
 	//#define	USE_MPE
 	//#define	USE_IRAYPLE
@@ -1116,21 +1114,6 @@ struct stYield
 };
 
 
-// struct stMasterInfo
-// {
-// 	double dPixelSize;
-// 	CString strMasterLocation, strCADImgPath, strCADImgBackUpPath, strTwoMetalOppLayer;
-// 	int nImageCompression;
-// 	BOOL bTwoMetalInspection;
-// 
-// 	stMasterInfo()
-// 	{
-// 		dPixelSize=0.0;
-// 		strMasterLocation=""); strCADImgPath=""); strCADImgBackUpPath=""); strTwoMetalOppLayer="");
-// 		nImageCompression=0;
-// 		bTwoMetalInspection=FALSE;
-// 	}
-// };
 
 struct stSliceIo
 {
@@ -2034,5 +2017,313 @@ struct stListBuf
 	}
 
 };
+
+
+struct stDlgInfoReg
+{
+	CString TwoMetal, OneMetal, SampleTest, SampleTestShotNum;
+	CString ModeInner, ModeOutter; //SingleMode, 
+	CString FeedCcwRecoiler, FeedCcwUncoiler;
+	CString DoorSensorUncoiler, DoorSensorEngrave, DoorSensorAoiUp, DoorSensorAoiDn, DoorSensorPunch, DoorSensorRecoiler;
+	CString TotalReelLength, LotLength, LotCutLength, StopLength, UseStopLength, UseLotLength, OneShotLength;
+	CString CleanRollerAoiUp, CleanRollerAoiDn, Use380mm; //UltraSonicStTimeAoiUp, UltraSonicStTimeAoiDn,
+	CString UltraSonicEngrave, UltraSonicAoi;
+	CString UltraSonicStTimeAoi, Use346mm, Use340mm;
+
+	stDlgInfoReg()
+	{
+		//SingleMode = _T("MB44017A");
+		TwoMetal = _T("MB400020");
+		OneMetal = _T("MB400021");
+		SampleTest = _T("MB400022");
+		SampleTestShotNum = _T("MW41111");
+		ModeInner = _T("MB400023");
+		ModeOutter = _T("MB400024");
+		FeedCcwRecoiler = _T("MB400051");
+		FeedCcwUncoiler = _T("MB400050");
+		DoorSensorUncoiler = _T("MB400014");
+		DoorSensorEngrave = _T("MB400015");
+		DoorSensorAoiUp = _T("MB400016");
+		DoorSensorAoiDn = _T("MB400017");
+		DoorSensorPunch = _T("MB400018");
+		DoorSensorRecoiler = _T("MB400019");
+		CleanRollerAoiUp = _T("MB400065");
+		CleanRollerAoiDn = _T("MB400066");
+		TotalReelLength = _T("ML41000");
+		LotLength = _T("ML41002");
+		LotCutLength = _T("ML41004");
+		StopLength = _T("ML41006");
+		UseStopLength = _T("MB40000B");
+		UseLotLength = _T("MB40000C");
+		OneShotLength = _T("ML41030");
+		//UltraSonicStTimeAoiUp = _T("MW05942");
+		//UltraSonicStTimeAoiDn = _T("MW05940");
+		UltraSonicStTimeAoi = _T("MW41130");
+		Use380mm = _T("MB400054");
+		Use346mm = _T("MB400053");
+		Use340mm = _T("MB400052");
+		UltraSonicEngrave = _T("MB400062");
+		UltraSonicAoi = _T("MB400067");
+	}
+};
+
+struct stDlgFrameHighReg
+{
+	CString FeedOffsetPunch, FeedOffsetAoiUp, FeedOffsetAoiDn, FeedOffsetEngrave; //FeedOffsetAoi
+
+	stDlgFrameHighReg()
+	{
+		FeedOffsetPunch = _T("ML41066");
+		FeedOffsetAoiUp = _T("ML41062");
+		FeedOffsetAoiDn = _T("ML45064");
+		FeedOffsetEngrave = _T("ML41060");
+	}
+};
+
+
+struct stDlgMenu01
+{
+	//CString LastJobFromEngrave, LastJobFromAoiUp, LastJobFromAoiDn,
+	CString LastJob, LastShotNum, JobEnd, FeedCwPunch, FeedCwAoi, FeedCwEngrave;
+
+	stDlgMenu01()
+	{
+		//LastJobFromEngrave = _T("MB44019D");
+		//LastJobFromAoiUp = _T("MB440185");
+		//LastJobFromAoiDn = _T("MB440186");
+		LastJob = _T("MB400010");
+		LastShotNum = _T("MW41113");
+		JobEnd = _T("MB400009");
+
+		FeedCwPunch = _T("MB440161");
+		FeedCwAoi = _T("MB440160");
+		FeedCwEngrave = _T("MB440199");
+	}
+};
+
+struct stDlgMenu03
+{
+	CString Ready, Run, Reset, Stop;
+	CString ConnectModule;
+	CString ChuckPcbRecoiler, ChuckPaperRecoiler, JoinClampRecoiler, PcbShaftSupportRecoiler;
+	CString EpcActHomeRecoiler, EpcActFirstRecoiler, EpcActSecondRecoiler, EpcActThirdRecoiler, EpcAutoRecoiler, EpcManualRecoiler;
+	CString EpcHomeRecoiler, EpcInRecoiler, EpcOutRecoiler, PcbInverterCwRecoiler, PcbInverterCcwRecoiler;
+	CString PaperInverterCwRecoiler, PaperInverterCcwRecoiler, DancerUpperRecoiler, DancerFixerRecoiler;
+	CString FeedCwPunch, FeedCcwPunch, TensionCwPunch, TensionCcwPunch, FeedHomePunch, FeedVacuumPunch, FeedClampPunch, TensionClampPunch; //PcbPushPunch 
+	CString TableBlowerPunch, TableVacuumPunch, TableCylinderPunch, TableClampDnPunch, TableClampForwardPunch, PunchStartPunch;
+	CString FeedCwAoiDn, FeedCcwAoiDn, TensionCwAoiDn, TensionCcwAoiDn, FeedHomeAoiDn, FeedVacuumAoiDn, TableBlowerAoiDn, TableVacuumAoiDn, TableCylinderAoiDn;
+	CString FeedClampAoiDn, TensionClampAoiDn, CleanRollerUpAoiDn, CleanRollerDnAoiDn, CleanRollerPushAoiDn, TestStartAoiDn;
+	CString BufferRollerUpAoiDn, BufferRollerFixAoiDn; //PcbPushAoiDn, 
+	CString FeedCwAoiUp, FeedCcwAoiUp, TensionCwAoiUp, TensionCcwAoiUp, FeedHomeAoiUp, FeedVacuumAoiUp, TableBlowerAoiUp, TableVacuumAoiUp, TableCylinderAoiUp;
+	CString FeedClampAoiUp, TensionClampAoiUp, CleanRollerUpAoiUp, CleanRollerDnAoiUp, CleanRollerPushAoiUp, TestStartAoiUp;
+	CString UltrasonicDnAoiUp, UltrasonicRunAoiUp, UltrasonicSpeedAoiUp; // PcbPushAoiUp, 
+	CString FeedCwEngrave, FeedCcwEngrave, TensionCwEngrave, TensionCcwEngrave, FeedHomeEngrave, FeedVacuumEngrave, PcbPushEngrave;
+	CString TableBlowerEngrave, TableVacuumEngrave, TableCylinderEngrave, FeedClampEngrave, TensionClampEngrave;
+	CString UltrasonicDownEngrave, UltrasonicRunEngrave, UltrasonicSpeedEngrave, DancerUpperEngrave, DancerFixerEngrave;
+	CString AlignStartEngrave, LaserStartEngrave, ReadStartEngrave;
+	//CString FeedCwUncoiler, FeedCcwUncoiler, JoinUpLfUncoiler, JoinDnRtUncoiler, JoinVacuumUncoiler;
+	//CString PaperCwUncoiler, PaperCcwUncoiler, CleannerUncoiler, CleannerPushUncoiler;
+	CString ChuckPcbUncoiler, DancerUpperUncoiler, DancerFixerUncoiler, JoinClampUncoiler, PcbShaftSupportUncoiler, ChuckPaperUncoiler;
+	CString EpcActHomeUncoiler, EpcActFirstUncoiler, EpcActSecondUncoiler, EpcActThirdUncoiler, EpcAutoUncoiler, EpcManualUncoiler;
+	CString EpcHomeUncoiler, EpcInUncoiler, EpcOutUncoiler, PcbInverterCwUncoiler, PcbInverterCcwUncoiler;
+	CString PaperInverterCwUncoiler, PaperInverterCcwUncoiler;
+	CString FeedOnePanel, AllDancerUpDn, AllDancerFixOnOff;
+
+	//CString TensionOnPunch, TensionOnAoi, TensionOnEngrave, UltrasonicSpeedAoiDn;
+	//CString UseCore150mmRecoiler, UseCore150mmUncoiler, FeedOnePanel;
+	
+	stDlgMenu03()
+	{
+		Ready = _T("MB400003");
+		Run = _T("MB400006");
+		Reset = _T("MB400182");
+		Stop = _T("MB400007");
+
+		ConnectModule = _T("MB40000F");
+
+		ChuckPcbRecoiler = _T("MB400160");
+		ChuckPaperRecoiler = _T("MB400161");
+		JoinClampRecoiler = _T("MB400162");
+		PcbShaftSupportUncoiler = _T("MB400163");
+		EpcActHomeRecoiler = _T("MB400164");
+		EpcActFirstRecoiler = _T("MB400165");
+		EpcActSecondRecoiler = _T("MB400166");
+		EpcActThirdRecoiler = _T("MB400167");
+		EpcAutoRecoiler = _T("MB400169");
+		EpcManualRecoiler = _T("MB40016A");
+		EpcHomeRecoiler = _T("MB40016B");
+		EpcInRecoiler = _T("MB40016C");
+		EpcOutRecoiler = _T("MB40016D");
+		PcbInverterCwRecoiler = _T("MB400170");
+		PcbInverterCcwRecoiler = _T("MB400171");
+		PaperInverterCwRecoiler = _T("MB400172");
+		PaperInverterCcwRecoiler = _T("MB400173");
+		DancerUpperRecoiler = _T("MB400174");
+		DancerFixerRecoiler = _T("MB400175");
+
+		FeedCwPunch = _T("MB400140");
+		FeedCcwPunch = _T("MB400141");
+		TensionCwPunch = _T("MB400142");
+		TensionCcwPunch = _T("MB400143");
+		FeedHomePunch = _T("MB400144");
+		FeedVacuumPunch = _T("MB400145");
+		FeedClampPunch = _T("MB400146");
+		TensionClampPunch = _T("MB400147");
+		//PcbPushPunch = _T("MB005516");
+		TableVacuumPunch = _T("MB400148");
+		TableBlowerPunch = _T("MB400149");
+		TableCylinderPunch = _T("MB40014A");
+		TableClampDnPunch = _T("MB40014B");
+		TableClampForwardPunch = _T("MB40014C");
+		PunchStartPunch = _T("MB400150");
+
+		FeedCwAoiDn = _T("MB40010A");
+		FeedCcwAoiDn = _T("MB40010B");
+		TensionCwAoiDn = _T("MB40010C");
+		TensionCcwAoiDn = _T("MB40010D");
+		FeedHomeAoiDn = _T("MB40010E");
+		FeedVacuumAoiDn = _T("MB400129");
+		//PcbPushAoiDn = _T("MB005706");
+		TableBlowerAoiDn = _T("MB40012D");
+		TableVacuumAoiDn = _T("MB40012C");
+		TableCylinderAoiDn = _T("MB400130");
+		FeedClampAoiDn = _T("MB005709");
+		TensionClampAoiDn = _T("MB400133");
+		CleanRollerUpAoiDn = _T("MB400118");
+		CleanRollerDnAoiDn = _T("MB400134");
+		CleanRollerPushAoiDn = _T("MB400135");
+		TestStartAoiDn = _T("MB400136");
+		BufferRollerUpAoiDn = _T("MB40013C");
+		BufferRollerFixAoiDn = _T("MB40013D");
+
+		FeedCwAoiUp = _T("MB40010A");
+		FeedCcwAoiUp = _T("MB40010B");
+		TensionCwAoiUp = _T("MB40010C");
+		TensionCcwAoiUp = _T("MB40010D");
+		FeedHomeAoiUp = _T("MB40010E");
+		FeedVacuumAoiUp = _T("MB400129");
+		//PcbPushAoiUp = _T("MB005606");
+		TableBlowerAoiUp = _T("MB400114");
+		TableVacuumAoiUp = _T("MB400113");
+		TableCylinderAoiUp = _T("MB400115");
+		FeedClampAoiUp = _T("MB400111");
+		TensionClampAoiUp = _T("MB400112");
+		CleanRollerUpAoiUp = _T("MB400118");
+		CleanRollerDnAoiUp = _T("MB400119");
+		CleanRollerPushAoiUp = _T("MB40011A");
+		TestStartAoiUp = _T("MB400120");
+		UltrasonicDnAoiUp = _T("MB400126");
+		UltrasonicRunAoiUp = _T("MB400127");
+		UltrasonicSpeedAoiUp = _T("MB400128");
+
+		FeedCwEngrave = _T("MB400086");
+		FeedCcwEngrave = _T("MB400087");
+		TensionCwEngrave = _T("MB400088");
+		TensionCcwEngrave = _T("MB400089");
+		FeedHomeEngrave = _T("MB40008A");
+		FeedVacuumEngrave = _T("MB40008B");
+		PcbPushEngrave = _T("MB005516");
+		TableBlowerEngrave = _T("MB400091");
+		TableVacuumEngrave = _T("MB400090");
+		TableCylinderEngrave = _T("MB400092");
+		FeedClampEngrave = _T("MB40008C");
+		TensionClampEngrave = _T("MB40008D");
+		UltrasonicDownEngrave = _T("MB400093");
+		UltrasonicRunEngrave = _T("MB400094");
+		UltrasonicSpeedEngrave = _T("MB400095");
+		DancerUpperEngrave = _T("MB400096");
+		DancerFixerEngrave = _T("MB400097");
+		AlignStartEngrave = _T("MB400100");
+		LaserStartEngrave = _T("MB400103");
+		ReadStartEngrave = _T("MB400106");
+
+		//FeedCwUncoiler = _T("MB00540C");
+		//FeedCcwUncoiler = _T("MB00540D");
+		ChuckPcbUncoiler = _T("MB400070");
+		DancerUpperUncoiler = _T("MB400084");
+		DancerFixerUncoiler = _T("MB400085");
+		//JoinUpLfUncoiler = _T("MB005405");
+		//JoinDnRtUncoiler = _T("MB005406");
+		//JoinVacuumUncoiler = _T("MB00540F");
+		JoinClampUncoiler = _T("MB400072");
+		PcbShaftSupportUncoiler = _T("MB400073");
+		ChuckPaperUncoiler = _T("MB005408");
+		EpcActHomeUncoiler = _T("MB400074");
+		EpcActFirstUncoiler = _T("MB400075");
+		EpcActSecondUncoiler = _T("MB400076");
+		EpcActThirdUncoiler = _T("MB400077");
+		EpcAutoUncoiler = _T("MB400079");
+		EpcManualUncoiler = _T("MB40007A");
+		EpcHomeUncoiler = _T("MB40007B");
+		EpcInUncoiler = _T("MB40007C");
+		EpcOutUncoiler = _T("MB40007D");
+		PcbInverterCwUncoiler = _T("MB400080");
+		PcbInverterCcwUncoiler = _T("MB400081");
+		PaperInverterCwUncoiler = _T("MB400082");
+		PaperInverterCcwUncoiler = _T("MB400083");
+		//PaperCwUncoiler = _T("MB005409");
+		//PaperCcwUncoiler = _T("MB00540A");
+		//CleannerUncoiler = _T("MB005403");
+		//CleannerPushUncoiler = _T("MB005404");
+		//TensionOnPunch = _T("MB440155");
+		//TensionOnAoi = _T("MB440156");
+		//TensionOnEngrave = _T("MB440154");
+		//UltrasonicSpeedAoiDn = _T("MB44014F");
+		//UseCore150mmRecoiler = _T("MB44017E");
+		//UseCore150mmUncoiler = _T("MB44017F");
+
+		FeedOnePanel = _T("MB40000E");
+		AllDancerUpDn  = _T("MB40005B");
+		AllDancerFixOnOff = _T("MB40005C");
+	}
+};
+
+struct stDlgMenu04
+{
+	CString FeedTorqueCwPunch, FeedTorqueCcwPunch, FeedTorqueCwAoi, FeedTorqueCcwAoi, FeedTorqueCwEngrave, FeedTorqueCcwEngrave;
+	CString FeedSpeed, FeedAcc, FeedOnSpeed;//FeedTorquePunch, FeedTorqueAoi, FeedTorqueEngrave, 
+	CString FeedOnAcc, FeedLeadPitchAoi, FeedLeadPitchPunch, FeedLeadPitchEngrave;
+	CString BufferPosStAoi, BufferPosStEngrave, FeedLengthFromAoiToPunch, ShotNumFromAoiUpToAoiDn;
+	CString FeedLengthFromEngraveToAoi, FeedSpeed2dCode, FeedAcc2dCode;
+
+	stDlgMenu04()
+	{
+		FeedTorqueCwPunch = _T("ML41050");
+		FeedTorqueCcwPunch = _T("ML41052");
+		FeedTorqueCwAoi = _T("ML41044");
+		FeedTorqueCcwAoi = _T("ML41046");
+		FeedTorqueCwEngrave = _T("ML41040");
+		FeedTorqueCcwEngrave = _T("ML41042");
+		//FeedTorquePunch = _T("ML45044");
+		//FeedTorqueAoi = _T("ML45042");
+		//FeedTorqueEngrave = _T("ML45050");
+		FeedSpeed = _T("ML45034");
+		FeedAcc = _T("ML45036");
+		FeedOnSpeed = _T("ML45038");
+		FeedOnAcc = _T("ML45040");
+		FeedLeadPitchAoi = _T("ML45012");
+		FeedLeadPitchPunch = _T("ML45014");
+		FeedLeadPitchEngrave = _T("ML45020");
+		BufferPosStAoi = _T("ML45016");
+		BufferPosStEngrave = _T("ML45028");
+		FeedLengthFromAoiToPunch = _T("ML45008");
+		ShotNumFromAoiUpToAoiDn = _T("ML45010");
+		FeedLengthFromEngraveToAoi = _T("ML45024");
+		FeedSpeed2dCode = _T("ML45060");
+		FeedAcc2dCode = _T("ML45062");
+	}
+};
+
+struct stGuiRegister
+{
+	stDlgInfoReg DlgInfo;
+	stDlgFrameHighReg DlgFrameHigh;
+	stDlgMenu01 DlgMenu01;
+	stDlgMenu03 DlgMenu03;
+	stDlgMenu04 DlgMenu04;
+};
+
+
+
 
 #endif // !defined(AFX_GLOBALDEFINE_H_INCLUDED_)

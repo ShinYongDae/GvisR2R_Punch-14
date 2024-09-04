@@ -629,7 +629,8 @@ void CDlgFrameHigh::DispSigAoi()
 		myLabel[1].SetImageBk(LBL_IMG_UP);
 
 	// IDC_STC_SIG02
-	bOn	= pView->m_pDlgMenu03->IsAoiTblVacDone();			// In - 검사부 테이블 진공 완료
+	//bOn	= pView->m_pDlgMenu03->IsAoiTblVacDone();			// In - 검사부 테이블 진공 완료
+	bOn = pView->IsAoiTblVacDone();			// In - 검사부 테이블 진공 완료
 	if(bOn && myLabel[2].GetImageBk() != LBL_IMG_DN)
 		myLabel[2].SetImageBk(LBL_IMG_DN);
 	else if(!bOn && myLabel[2].GetImageBk() != LBL_IMG_UP)
@@ -662,7 +663,6 @@ void CDlgFrameHigh::DispSigAoi()
 	else if (!bOn && myLabel[4].GetImageBk() != LBL_IMG_UP)
 		myLabel[4].SetImageBk(LBL_IMG_UP);
 
-	//pView->m_nDebugStep = pView->m_nMkStAuto;
 	pView->DispThreadTick();
 }
 

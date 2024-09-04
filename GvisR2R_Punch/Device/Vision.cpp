@@ -166,28 +166,24 @@ CVision::~CVision()
 	// Temperary Buf for Pin View
 	if(MilBufPinTemp != M_NULL)
 	{
-		pView->m_nDebugStep = 200; pView->DispThreadTick();
 		MbufFree(MilBufPinTemp);
 		MilBufPinTemp = M_NULL;
 	}
 
 	if(MilPinImgBuf != M_NULL)
 	{
-		pView->m_nDebugStep = 201; pView->DispThreadTick();
 		MbufFree(MilPinImgBuf);
 		MilPinImgBuf = M_NULL;
 	}
 
 	if(m_pMilBufPin)
 	{
-		pView->m_nDebugStep = 202; pView->DispThreadTick();
 		delete m_pMilBufPin;
 		m_pMilBufPin = NULL;
 	}
 
 	if(m_pMilDispPin)
 	{
-		pView->m_nDebugStep = 203; pView->DispThreadTick();
 		delete m_pMilDispPin;
 		m_pMilDispPin = NULL;
 	}
@@ -195,50 +191,42 @@ CVision::~CVision()
 	// Temperary Buf for Align View
 	if(MilBufAlignTemp[0] != M_NULL)
 	{
-		pView->m_nDebugStep = 204; pView->DispThreadTick();
 		MbufFree(MilBufAlignTemp[0]);
 		MilBufAlignTemp[0] = M_NULL;
 	}
 	if(MilBufAlignTemp[1] != M_NULL)
 	{
-		pView->m_nDebugStep = 205; pView->DispThreadTick();
 		MbufFree(MilBufAlignTemp[1]);
 		MilBufAlignTemp[1] = M_NULL;
 	}
 	if (MilBufAlignTemp[2] != M_NULL)
 	{
-		pView->m_nDebugStep = 206; pView->DispThreadTick();
 		MbufFree(MilBufAlignTemp[2]);
 		MilBufAlignTemp[2] = M_NULL;
 	}
 	if (MilBufAlignTemp[3] != M_NULL)
 	{
-		pView->m_nDebugStep = 207; pView->DispThreadTick();
 		MbufFree(MilBufAlignTemp[3]);
 		MilBufAlignTemp[3] = M_NULL;
 	}
 
 	if(MilAlignImgBuf[0] != M_NULL)
 	{
-		pView->m_nDebugStep = 208; pView->DispThreadTick();
 		MbufFree(MilAlignImgBuf[0]);
 		MilAlignImgBuf[0] = M_NULL;
 	}
 	if(MilAlignImgBuf[1] != M_NULL)
 	{
-		pView->m_nDebugStep = 209; pView->DispThreadTick();
 		MbufFree(MilAlignImgBuf[1]);
 		MilAlignImgBuf[1] = M_NULL;
 	}
 	if (MilAlignImgBuf[2] != M_NULL)
 	{
-		pView->m_nDebugStep = 210; pView->DispThreadTick();
 		MbufFree(MilAlignImgBuf[2]);
 		MilAlignImgBuf[2] = M_NULL;
 	}
 	if (MilAlignImgBuf[3] != M_NULL)
 	{
-		pView->m_nDebugStep = 211; pView->DispThreadTick();
 		MbufFree(MilAlignImgBuf[3]);
 		MilAlignImgBuf[3] = M_NULL;
 	}
@@ -277,14 +265,12 @@ CVision::~CVision()
 	// Temperary Buf for Def View
 	if(MilBufCADTemp != M_NULL)
 	{
-		pView->m_nDebugStep = 212; pView->DispThreadTick();
 		MbufFree(MilBufCADTemp);
 		MilBufCADTemp = M_NULL;
 	}
 
 	if(MilCADImgBuf != M_NULL)
 	{
-		pView->m_nDebugStep = 213; pView->DispThreadTick();
 		MbufFree(MilCADImgBuf);
 		MilCADImgBuf = M_NULL;
 	}
@@ -3030,7 +3016,6 @@ void CVision::DispAxisPos(BOOL bForceWrite)
 			//m_pMilDrawOverlay->DrawText(m_ptDisplayAxisPosOffset.x, m_ptDisplayAxisPosOffset.y+m_nDisplayAxisPosLineHeight*1, szText);
 			m_pMil->DrawText(szText, m_ptDisplayAxisPosOffset.x, m_ptDisplayAxisPosOffset.y+m_nDisplayAxisPosLineHeight*1, M_COLOR_GREEN);
 		}
-#ifdef USE_MPE
 		dFdEnc = (double)pDoc->m_pMpeData[0][0];	// 마킹부 Feeding 엔코더 값(단위 mm )
 		if(fabs(m_dFdEnc-dFdEnc)>0.05 || bForceWrite)
 		{
@@ -3049,7 +3034,6 @@ void CVision::DispAxisPos(BOOL bForceWrite)
 			//m_pMilDrawOverlay->DrawText(m_ptDisplayAxisPosOffset.x, m_ptDisplayAxisPosOffset.y+(m_nDisplayAxisPosLineHeight*2), szText);
 			m_pMil->DrawText(szText, m_ptDisplayAxisPosOffset.x, m_ptDisplayAxisPosOffset.y + m_nDisplayAxisPosLineHeight * 3, M_COLOR_GREEN);
 		}
-#endif
 	}
 	else if(m_nIdx==1)
 	{
@@ -4444,7 +4428,6 @@ void CVision::SaveCadImg(int nIdxMkInfo, CString sPath)
 
 void CVision::LoadCADBuf(UCHAR *pCADCellImg, long OrgStX, long OrgStY, long DesStX, long DesStY, long SizeX, long SizeY)
 {
-#ifdef USE_CAM_MASTER
 	if (!MilCADImgBuf)
 		return;
 
@@ -4452,6 +4435,8 @@ void CVision::LoadCADBuf(UCHAR *pCADCellImg, long OrgStX, long OrgStY, long DesS
 	TiffData tdat;
 	long OrgX, OrgY, DstX, DstY, SzX, SzY;
 	MIL_ID MilBufCADCld = M_NULL, MilBufCADTempCld = M_NULL;
+
+#ifdef USE_CAM_MASTER
 
 	if (VicFileLoadFromMem(MilCADImgBuf, pCADCellImg, tdat))
 	{
@@ -4509,9 +4494,9 @@ void CVision::LoadCADBuf(UCHAR *pCADCellImg, long OrgStX, long OrgStY, long DesS
 	if (!MilCADImgBuf)	return;
 
 	int nCellId = pView->m_pMgrReelmap->m_nCellInspID[0];
-	REGION_STRIP* pCellRgn = pView->m_pMgrReelmap->m_pCellRgn;
+	//REGION_STRIP* pCellRgn = pView->m_pMgrReelmap->m_pCellRgn;
+	int nLayer = 0;
 
-	//if (VicFileLoadFromMem(MilCADImgBuf, pDoc->m_Master[nLayer].m_pCADCellImg[pDoc->m_Master[nLayer].CellInspID[0]], tdat))
 	if (VicFileLoadFromMem(MilCADImgBuf, (*pView->m_pMgrReelmap->m_pCADCellImg[nLayer])[nCellId], tdat))
 	{
 		MbufChild2d(MilCADImgBuf, 0, 0, DEF_IMG_DISP_SIZEX, DEF_IMG_DISP_SIZEY, &MilBufCADCld);

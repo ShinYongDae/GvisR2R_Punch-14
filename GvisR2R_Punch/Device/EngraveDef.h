@@ -18,7 +18,7 @@ typedef struct stRcvSig
 	BOOL _2DEngLenMvCw, _2DEngLenMvCcw, _2DAoiLenMvCw, _2DAoiLenMvCcw, _2DMkLenMvCw, _2DMkLenMvCcw, _2DOneShotLenCw, _2DOneShotLenCcw,
 		_2DOffsetInitPos, _2DOffsetInitPosMove;
 	// Menu03
-	BOOL _Ready, _Run, _Reset, _Stop, _Auto, _OneCycle, _Manual, _MkTq, _AoiTq, _EngTq, _CcwModRe, _CcwModUn, _Core150Re, _Core150Un,
+	BOOL _Ready, _Run, _Reset, _Stop, _Auto, _OneCycle, _Manual, _MkTq, _AoiTq, _EngTq, _CcwModRe, _CcwModUn, //_Core150Re, _Core150Un,
 		_Relation, _JoinSelRe, _MvCwRe, _MvCcwRe, _PrdChuckRe, _DancerUpRe, _PasteUpLfRe, _PasteUpRtRe, _PasteVacRe, _PprChuckRe,
 		_PprCwRe, _PprCcwRe, _DoRe, _PrdPprRe,
 		_JoinSelMk, _MvCwMk, _MvCcwMk, _FdVacMk, _PushUpMk, _TblBlwMk, _TblVacMk, _FdClampMk, _TensClampMk, _OnePnlMk, _LsrMk,
@@ -98,7 +98,7 @@ typedef struct stRcvSig
 		_2DEngLenMvCw = FALSE; _2DEngLenMvCcw = FALSE; _2DAoiLenMvCw = FALSE; _2DAoiLenMvCcw = FALSE; _2DMkLenMvCw = FALSE; _2DMkLenMvCcw = FALSE; _2DOneShotLenCw = FALSE; _2DOneShotLenCcw = FALSE;
 		_2DOffsetInitPos = FALSE; _2DOffsetInitPosMove = FALSE;
 		// Menu03
-		_Ready = FALSE; _Run = FALSE; _Reset = FALSE; _Stop = FALSE; _Auto = FALSE; _OneCycle = FALSE; _Manual = FALSE; _MkTq = FALSE; _AoiTq = FALSE; _EngTq = FALSE; _CcwModRe = FALSE; _CcwModUn = FALSE; _Core150Re = FALSE; _Core150Un = FALSE;
+		_Ready = FALSE; _Run = FALSE; _Reset = FALSE; _Stop = FALSE; _Auto = FALSE; _OneCycle = FALSE; _Manual = FALSE; _MkTq = FALSE; _AoiTq = FALSE; _EngTq = FALSE; _CcwModRe = FALSE; _CcwModUn = FALSE; //_Core150Re = FALSE; _Core150Un = FALSE;
 		_Relation = FALSE; _JoinSelRe = FALSE; _MvCwRe = FALSE; _MvCcwRe = FALSE; _PrdChuckRe = FALSE; _DancerUpRe = FALSE; _PasteUpLfRe = FALSE; _PasteUpRtRe = FALSE; _PasteVacRe = FALSE; _PprChuckRe = FALSE;
 		_PprCwRe = FALSE; _PprCcwRe = FALSE; _DoRe = FALSE; _PrdPprRe = FALSE;
 		_JoinSelMk = FALSE; _MvCwMk = FALSE; _MvCcwMk = FALSE; _FdVacMk = FALSE; _PushUpMk = FALSE; _TblBlwMk = FALSE; _TblVacMk = FALSE; _FdClampMk = FALSE; _TensClampMk = FALSE; _OnePnlMk = FALSE; _LsrMk = FALSE;

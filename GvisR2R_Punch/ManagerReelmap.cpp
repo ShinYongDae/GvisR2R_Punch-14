@@ -61,8 +61,19 @@ CManagerReelmap::CManagerReelmap(CWnd* pParent)
 	for (k = 0; k < MAX_PCR_PNL; k++)
 		m_pPcrIts[k] = NULL;
 
-	Reset();
+	m_pReelMapUp = NULL;
+	m_pReelMapDn = NULL;
+	m_pReelMapAll = NULL;
+	m_pReelMapInnerUp = NULL;
+	m_pReelMapInnerDn = NULL;
+	m_pReelMapInnerAll = NULL;
+	m_pReelMapIts = NULL;
+
 	Init();
+	Reset();
+	LoadMstInfo();
+	InitReelmap();
+	LoadConfig();
 
 	if (!Create())
 	{
@@ -261,7 +272,6 @@ void CManagerReelmap::Init()
 	}
 
 	InitPcr();
-	LoadConfig();
 }
 
 void CManagerReelmap::InitThread()
@@ -985,14 +995,17 @@ BOOL CManagerReelmap::InitReelmap()
 	}
 
 	if (m_pReelMap)
-	{
 		m_pReelMapDisp = m_pReelMap;
 
-		if (bDualTest)
-			pView->m_pDlgMenu01->SelMap(ALL);
-		else
-			pView->m_pDlgMenu01->SelMap(UP);
-	}
+	//if (m_pReelMap)
+	//{
+	//	m_pReelMapDisp = m_pReelMap;
+	//
+	//	if (bDualTest)
+	//		pView->m_pDlgMenu01->SelMap(ALL);
+	//	else
+	//		pView->m_pDlgMenu01->SelMap(UP);
+	//}
 
 	SetReelmap(ROT_NONE);
 	UpdateData();

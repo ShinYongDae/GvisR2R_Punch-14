@@ -188,9 +188,9 @@ public:
 	void SetEngItsCode();
 
 	// SetInfo()
-	void SetModelUpName(CString sModel);
+	void SetModelName(CString sModel);
 	//void SetModelDnName();
-	void SetLotUpName(CString sLot);
+	void SetLotName(CString sLot);
 	//void SetLotDnName();
 	void SetLayerUpName(CString sLayer);
 	void SetLayerDnName(CString sLayer);
@@ -375,8 +375,6 @@ public:
 	// Etc
 	void SwAoiEmg(BOOL bOn);
 	void IsSwAoiEmg(BOOL bOn);
-	//void SwBufRolSol(BOOL bOn);
-	//void SwMkDnSol(BOOL bOn);
 
 	// Recoiler
 	void SwRcRelation(BOOL bOn);

@@ -618,7 +618,7 @@ BOOL CGvisR2R_PunchDoc::LoadMySpec() // 상면 기준으로 마킹부 상면작업 로컬데이타
 		}
 		else
 		{
-			if (IsPinData())// || IsMkOffsetData())
+			if (IsPinData())
 				m_pSpecLocal->Load();
 		}
 	}
@@ -1593,20 +1593,13 @@ BOOL CGvisR2R_PunchDoc::LoadWorkingInfo()
 		pView->ClrDispMsg(); AfxMessageBox(_T("Model이 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
 		WorkingInfo.LastJob.sModel = CString(_T(""));
 	}
-	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("ModelDn Name"), NULL, szData, sizeof(szData), sPath))
-	//	WorkingInfo.LastJob.sModelDn = CString(szData);
-	//else
-	//{
-	//	pView->ClrDispMsg(); AfxMessageBox(_T("ModelDn이 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
-	//	WorkingInfo.LastJob.sModelDn = CString(_T(""));
-	//}
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("LayerUp Name"), NULL, szData, sizeof(szData), sPath))
-		WorkingInfo.CurrModel.sLot = CString(szData);
+		WorkingInfo.LastJob.sLayerUp = CString(szData);
 	else
 	{
 		pView->ClrDispMsg(); AfxMessageBox(_T("LayerUp가 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
-		WorkingInfo.CurrModel.sLot = CString(_T(""));
+		WorkingInfo.LastJob.sLayerUp = CString(_T(""));
 	}
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Test Mode"), NULL, szData, sizeof(szData), sPath)) // MODE_NONE = 0, MODE_INNER = 1, MODE_OUTER = 2
@@ -1655,13 +1648,6 @@ BOOL CGvisR2R_PunchDoc::LoadWorkingInfo()
 		pView->ClrDispMsg(); AfxMessageBox(_T("LotUp가 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
 		WorkingInfo.LastJob.sLot = CString(_T(""));
 	}
-	//if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("LotDn No"), NULL, szData, sizeof(szData), sPath))
-	//	WorkingInfo.CurrModel.sLot = CString(szData);
-	//else
-	//{
-	//	pView->ClrDispMsg(); AfxMessageBox(_T("LotDn가 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
-	//	WorkingInfo.CurrModel.sLot = CString(_T(""));
-	//}
 
 	if (0 < ::GetPrivateProfileString(_T("Last Job"), _T("Last SerialUp"), NULL, szData, sizeof(szData), sPath))
 		WorkingInfo.LastJob.sSerialUp = CString(szData);
@@ -4628,10 +4614,6 @@ int CGvisR2R_PunchDoc::GetPcrIdx(int nSerial, BOOL bNewLot)
 	}
 
 	int nIdx = (nSerial - 1) % MAX_PCR_PNL;
-	// 	if(!bNewLot)
-	// 		nIdx = (nSerial-1)%MAX_PCR_PNL;
-	// 	else // New Lot...
-	// 		nIdx = (m_nLotLastShot + nSerial - 1)%MAX_PCR_PNL;
 
 	return nIdx;
 }
@@ -4734,19 +4716,9 @@ BOOL CGvisR2R_PunchDoc::GetAoiDnInfo(int nSerial, int *pNewLot, BOOL bFromBuf) /
 	}
 
 	BOOL Info1;//Info0, 
-// 	Info0 = GetAoiInfoUp(nSerial);
-
-// 	double dCurPosMkFd = (double)m_pMpeData[0][0];	// 마킹부 Feeding 엔코더 값(단위 mm )
-// 	double dTgtFd = _tstof(WorkingInfo.Motion.sFdAoiAoiDistShot) * _tstof(WorkingInfo.Motion.sAoiFdDist);
-// 	if(dCurPosMkFd < dTgtFd-_tstof(WorkingInfo.Motion.sAoiFdDist) + 10.0)
-// 		return FALSE;
-// 	else
-	{
-		Info1 = GetAoiInfoDn(nSerial, pNewLot, bFromBuf);
-		if (Info1)
-			return TRUE;
-	}
-
+	Info1 = GetAoiInfoDn(nSerial, pNewLot, bFromBuf);
+	if (Info1)
+		return TRUE;
 	return FALSE;
 }
 
@@ -4850,12 +4822,6 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoUp(int nSerial, int *pNewLot, BOOL bFromBuf) /
 
 	BOOL bUpdate = FALSE;
 
-	//if (WorkingInfo.CurrModel.sLot != Status.PcrShare[0].sLot || WorkingInfo.LastJob.sEngItsCode != Status.PcrShare[0].sItsCode)
-	//{
-	//	bUpdate = TRUE;
-	//	WorkingInfo.CurrModel.sLot = Status.PcrShare[0].sLot;
-	//	m_sItsCode = WorkingInfo.LastJob.sEngItsCode = Status.PcrShare[0].sItsCode;
-	//}
 	if (WorkingInfo.CurrModel.sModel != strModel)
 	{
 		if (WorkingInfo.CurrModel.sModel.IsEmpty()) // 초기화 이후 처음 Model 갱신
@@ -4866,12 +4832,6 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoUp(int nSerial, int *pNewLot, BOOL bFromBuf) /
 		WorkingInfo.NextModel.sModel = strModel;
 	}
 
-	//if (WorkingInfo.CurrModel.sItsCode != sItsCode)
-	//{
-	//	if (WorkingInfo.CurrModel.sItsCode.IsEmpty()) // 초기화 이후 처음 ItsCode 갱신
-	//		bUpdate = TRUE;
-	//	WorkingInfo.NextModel.sItsCode = sItsCode;
-	//}
 
 	if (WorkingInfo.CurrModel.sLot != strLot)
 	{
@@ -5113,13 +5073,6 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoDn(int nSerial, int *pNewLot, BOOL bFromBuf) /
 
 		WorkingInfo.NextModel.sModel = strModel;
 	}
-
-	//if (WorkingInfo.CurrModel.sItsCode != sItsCode)
-	//{
-	//	if (WorkingInfo.CurrModel.sItsCode.IsEmpty()) // 초기화 이후 처음 ItsCode 갱신
-	//		bUpdate = TRUE;
-	//	WorkingInfo.NextModel.sItsCode = sItsCode;
-	//}
 
 	if (WorkingInfo.CurrModel.sLot != strLot)
 	{
@@ -5638,7 +5591,6 @@ int CGvisR2R_PunchDoc::LoadPCRAllDn(int nSerial, BOOL bFromShare)	// return : 2(
 	int nTotDef[3];
 	nTotDef[0] = m_pPcr[0][nIdx]->m_nTotDef;
 	nTotDef[1] = m_pPcr[1][nIdx]->m_nTotDef;
-	//nTotDef[2] = nTotDef[0] + nTotDef[1];
 
 	int nTotPcs = m_Master[0].m_pPcsRgn->nTotPcs;
 	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
@@ -5648,22 +5600,6 @@ int CGvisR2R_PunchDoc::LoadPCRAllDn(int nSerial, BOOL bFromShare)	// return : 2(
 		nComp = nTotDef[0];
 	else
 		nComp = nTotDef[1];
-
-	// 	for(i=0; i<nComp; i++)
-	// 	{
-	// 		if(i<nTotDef[0])
-	// 		{
-	// 			nPcsId = m_pPcr[0][nIdx]->m_pDefPcs[i];
-	// 			pPcrMgr[nPcsId].nIdx = i;
-	// 			pPcrMgr[nPcsId].nIdxUp = i;	// Up
-	// 		}
-	// 		if(i<nTotDef[1])
-	// 		{
-	// 			nPcsId = m_pPcr[1][nIdx]->m_pDefPcs[i];
-	// 			pPcrMgr[nPcsId].nIdx = i;
-	// 			pPcrMgr[nPcsId].nIdxDn = i; // Dn
-	// 		}
-	// 	}
 
 	int nTotVerifyed[2] = { 0 };												// nPcsId : CamMaster Pcs Index
 
@@ -5851,11 +5787,6 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[0][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
-	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
-	{
-		int syd = 1;
-	}
-
 	// Model
 	nTemp = strFileData.Find(',', 0);
 	strModel = strFileData.Left(nTemp);
@@ -5884,6 +5815,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
 
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -5906,7 +5838,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 		{
 			bUpdate = TRUE;
 			if (pView->m_pEngrave)
-				pView->m_pEngrave->SetModelUpName(strModel);
+				pView->m_pEngrave->SetModelName(strModel);
 		}
 		else
 			pView->m_bChangeModel = TRUE;
@@ -5930,7 +5862,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 
 		WorkingInfo.NextModel.sLot = strLot;
 		if (pView->m_pEngrave)
-			pView->m_pEngrave->SetLotUpName(strLot);
+			pView->m_pEngrave->SetLotName(strLot);
 	}
 
 	if (WorkingInfo.CurrModel.sLayerUp != strLayer)
@@ -5959,7 +5891,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	//	{
 	//		WorkingInfo.CurrModel.sLot = strLot;
 	//		if(pView->m_pEngrave)
-	//			pView->m_pEngrave->SetLotUpName();
+	//			pView->m_pEngrave->SetLotName();
 	//	}
 	//	bUpdate = TRUE;
 	//	m_sItsCode = WorkingInfo.LastJob.sEngItsCode = sItsCode;
@@ -5971,7 +5903,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	//	{
 	//		WorkingInfo.CurrModel.sModel = strModel;
 	//		if (pView->m_pEngrave)
-	//			pView->m_pEngrave->SetModelUpName();
+	//			pView->m_pEngrave->SetModelName();
 	//	}
 	//	if (WorkingInfo.CurrModel.sLot != strLayer)
 	//	{
@@ -6073,9 +6005,7 @@ int CGvisR2R_PunchDoc::LoadPCRUp(int nSerial, BOOL bFromShare)	// return : 2(Fai
 				m_pPcr[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
 			}
 			else
-			{
 				m_pPcr[0][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
-			}
 
 			m_pPcr[0][nIdx]->m_pLayer[i] = 0; // Up
 
@@ -6219,11 +6149,6 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[1][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
-	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
-	{
-		int syd = 1;
-	}
-
 	// Model
 	nTemp = strFileData.Find(',', 0);
 	strModel = strFileData.Left(nTemp);
@@ -6238,39 +6163,21 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[1][nIdx]->m_sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	//{
-		// Lot
-		nTemp = strFileData.Find(',', 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[1][nIdx]->m_sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find('\n', 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[1][nIdx]->m_sItsCode = sItsCode;
-	//}
-	//else
-	//{
-	//	// Lot
-	//	nTemp = strFileData.Find(',', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[1][nIdx]->m_sLot = strLot;
-	//
-	//	// Lot
-	//	nTemp = strFileData.Find('\n', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[1][nIdx]->m_sLot = strLot;
-	//}
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sItsCode = sItsCode;
 
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -6281,7 +6188,6 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	{
 		pDoc->m_sEngModel = strModel;
 		pDoc->m_sEngLotNum = strLot;
-		//pDoc->m_sEngLayerUp = strLayer;
 		pDoc->m_sEngLayerDn = strLayer;
 		if (WorkingInfo.System.bUseITS)
 			pDoc->m_sItsCode = sItsCode;
@@ -6295,20 +6201,13 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 		{
 			bUpdate = TRUE;
 			if (pView->m_pEngrave)
-				pView->m_pEngrave->SetModelUpName(strModel);
+				pView->m_pEngrave->SetModelName(strModel);
 		}
 		else
 			pView->m_bChangeModel = TRUE;
 
 		WorkingInfo.NextModel.sModel = strModel;
 	}
-
-	//if (WorkingInfo.CurrModel.sItsCode != sItsCode)
-	//{
-	//	if (WorkingInfo.CurrModel.sItsCode.IsEmpty()) // 초기화 이후 처음 ItsCode 갱신
-	//		bUpdate = TRUE;
-	//	WorkingInfo.NextModel.sItsCode = sItsCode;
-	//}
 
 	if (WorkingInfo.CurrModel.sLot != strLot)
 	{
@@ -6319,7 +6218,7 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 
 		WorkingInfo.NextModel.sLot = strLot;
 		if (pView->m_pEngrave)
-			pView->m_pEngrave->SetLotUpName(strLot);
+			pView->m_pEngrave->SetLotName(strLot);
 	}
 
 	if (WorkingInfo.CurrModel.sLayerDn != strLayer)
@@ -6361,7 +6260,7 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 	//	{
 	//		WorkingInfo.LastJob.sModelDn = strModel;
 	//		if (pView->m_pEngrave)
-	//			pView->m_pEngrave->SetModelUpName();
+	//			pView->m_pEngrave->SetModelName();
 	//	}
 	//	if (WorkingInfo.CurrModel.sLayerDn != strLayer)
 	//	{
@@ -6459,9 +6358,7 @@ int CGvisR2R_PunchDoc::LoadPCRDn(int nSerial, BOOL bFromShare)	// return : 2(Fai
 				m_pPcr[1][nIdx]->m_pDefPcs[i] = _tstoi(strPieceID);
 			}
 			else
-			{
 				m_pPcr[1][nIdx]->m_pDefPcs[i] = MirrorLR(_tstoi(strPieceID));	// 초기 양면검사기용
-			}
 
 			m_pPcr[1][nIdx]->m_pLayer[i] = 1; // Dn
 
@@ -7448,10 +7345,8 @@ void CGvisR2R_PunchDoc::SetOnePnlLen(double dLen)
 	::WritePrivateProfileString(_T("Last Job"), _T("One Panel Length"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_DIST"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_DIST"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45032"), lData);	// 한 판넬 길이 (단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgInfo.OneShotLength, lData);	// 한 판넬 길이 (단위 mm * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7472,10 +7367,8 @@ void CGvisR2R_PunchDoc::SetOnePnlVel(double dVel)
 	WorkingInfo.Motion.sMkFdVel = WorkingInfo.Motion.sAoiFdVel = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_VEL"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_VEL"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dVel * 1000.0);
-	pView->m_pMpe->Write(_T("ML45034"), lData);	// 한 판넬 Feeding 속도 (단위 mm/sec * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedSpeed, lData);	// 한 판넬 Feeding 속도 (단위 mm/sec * 1000)
 }
 
 void CGvisR2R_PunchDoc::SetFdJogVel(double dVel)
@@ -7486,10 +7379,8 @@ void CGvisR2R_PunchDoc::SetFdJogVel(double dVel)
 	WorkingInfo.Motion.sMkJogVel = WorkingInfo.Motion.sAoiJogVel = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_JOG_VEL"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_VEL"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dVel * 1000.0);
-	pView->m_pMpe->Write(_T("ML45038"), lData);	// 연속공급 속도 (단위 mm/sec * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedOnSpeed, lData);	// 연속공급 속도 (단위 mm/sec * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7505,10 +7396,8 @@ void CGvisR2R_PunchDoc::SetFdJogAcc(double dVel)
 	WorkingInfo.Motion.sMkJogAcc = WorkingInfo.Motion.sAoiJogAcc = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_JOG_ACC"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_JOG_ACC"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dVel * 1000.0);
-	pView->m_pMpe->Write(_T("ML45040"), lData);	// 연속공급 가속도 (단위 mm/s^2 * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedOnAcc, lData);	// 연속공급 가속도 (단위 mm/s^2 * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7539,10 +7428,8 @@ void CGvisR2R_PunchDoc::SetOnePnlAcc(double dAcc)
 	WorkingInfo.Motion.sMkFdAcc = WorkingInfo.Motion.sAoiFdAcc = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_ACC"), sVal, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_SERVO_ACC"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dAcc * 1000.0);
-	pView->m_pMpe->Write(_T("ML45036"), lData);	// 한 판넬 Feeding 가속도 (단위 mm/s^2 * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedAcc, lData);	// 한 판넬 Feeding 가속도 (단위 mm/s^2 * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7562,11 +7449,9 @@ void CGvisR2R_PunchDoc::SetAoiFdPitch(double dPitch)
 	sVal.Format(_T("%.3f"), dPitch);
 	WorkingInfo.Motion.sAoiFdLead = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_FEEDING_DRUM_LEAD_PITCH"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPitch * 1000.0);
-	pView->m_pMpe->Write(_T("ML45012"), lData);	// 검사부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
-	pView->m_pMpe->Write(_T("ML45020"), lData);	// 검사부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedLeadPitchAoi, lData);	// 검사부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedLeadPitchEngrave, lData);	// 검사부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetAoiFdPitch()
@@ -7581,10 +7466,8 @@ void CGvisR2R_PunchDoc::SetMkFdPitch(double dPitch)
 	sVal.Format(_T("%.3f"), dPitch);
 	WorkingInfo.Motion.sMkFdLead = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_DRUM_LEAD_PITCH"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPitch * 1000.0);
-	pView->m_pMpe->Write(_T("ML45014"), lData);	// 마킹부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedLeadPitchPunch, lData);	// 마킹부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetMkFdPitch()
@@ -7655,10 +7538,8 @@ void CGvisR2R_PunchDoc::SetBufInitPos(double dPos)
 	sData.Format(_T("%.3f"), dPos);
 	WorkingInfo.Motion.sStBufPos = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("START_BUFFER_POSITION"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPos * 1000.0);
-	pView->m_pMpe->Write(_T("ML45016"), lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.BufferPosStAoi, lData);	// 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7672,10 +7553,8 @@ void CGvisR2R_PunchDoc::SetEngBufInitPos(double dPos)
 	sData.Format(_T("%.3f"), dPos);
 	WorkingInfo.Motion.sStEngBufPos = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("START_ENG_BUFFER_POSITION"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPos * 1000.0);
-	pView->m_pMpe->Write(_T("ML45028"), lData);	// 각인부 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.BufferPosStEngrave, lData);	// 각인부 버퍼 관련 설정 롤러 초기위치(단위 mm * 1000)
 }
 
 void CGvisR2R_PunchDoc::SetBufInitPos(double dVel, double dAcc)
@@ -7700,12 +7579,9 @@ void CGvisR2R_PunchDoc::SetAoiMkDist(double dLen)
 	CString sData, sPath = PATH_WORKING_INFO;
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.sFdMkAoiInitDist = sData;
-	//::WritePrivateProfileString(_T("Motion"), _T("FEEDING_INIT_DIST_OFFSET"), sData, sPath);
 	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_PUNCH_AOI_INIT_DIST"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45008"), lData);	// AOI(하)에서 마킹까지 거리 (단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedLengthFromAoiToPunch, lData);	// AOI(하)에서 마킹까지 거리 (단위 mm * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -7719,10 +7595,8 @@ void CGvisR2R_PunchDoc::SetAoiAoiDist(int nShot)
 	sData.Format(_T("%d"), nShot);
 	WorkingInfo.Motion.sFdAoiAoiDistShot = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_AOI_AOI_SHOT_NUM"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(nShot * 1000);
-	pView->m_pMpe->Write(_T("ML45010"), lData);	// AOI(상)에서 AOI(하) Shot수 (단위 Shot수 * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.ShotNumFromAoiUpToAoiDn, lData);	// AOI(상)에서 AOI(하) Shot수 (단위 Shot수 * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8276,11 +8150,9 @@ void CGvisR2R_PunchDoc::SetTotalReelDist(double dDist)
 		m_pReelMap->m_dTotLen = _tstof(sData) * 1000.0;
 	::WritePrivateProfileString(_T("Last Job"), _T("Reel Total Length"), sData, PATH_WORKING_INFO);
 
-#ifdef USE_MPE
 	long lData = (long)(dDist * 1000.0);
 	if(pView && pView->m_pMpe)
-		pView->m_pMpe->Write(_T("ML45000"), lData);	// 전체 Reel 길이 (단위 M * 1000)
-#endif
+		pView->MpeWrite(pView->Plc.DlgInfo.TotalReelLength, lData);	// 전체 Reel 길이 (단위 M * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8305,10 +8177,8 @@ void CGvisR2R_PunchDoc::SetSeparateDist(double dDist)
 		pDoc->m_pReelMap->m_dLotLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Lot Seperate Length"), sData, PATH_WORKING_INFO);
 
-#ifdef USE_MPE
 	long lData = (long)(dDist * 1000.0);
-	pView->m_pMpe->Write(_T("ML45002"), lData);	// Lot 분리 길이 (단위 M * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgInfo.LotLength, lData);	// Lot 분리 길이 (단위 M * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8333,13 +8203,8 @@ void CGvisR2R_PunchDoc::SetCuttingDist(double dDist)
 		pDoc->m_pReelMap->m_dLotCutPosLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Lot Cut Position Length"), sData, PATH_WORKING_INFO);
 
-#ifdef USE_MPE
-	//pView->IoWrite("ML45004", long(_tstof(sVal)*1000.0));	// Lot 분리 후 절단위치 (단위 M * 1000)
-	// 	pView->m_pMpe->Write(_T("ML45004", long(_tstof(sVal)*1000.0));
-
 	long lData = (long)(dDist * 1000.0);
-	pView->m_pMpe->Write(_T("ML45004"), lData);	// Lot 분리 후 절단위치 (단위 M * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgInfo.LotCutLength, lData);	// Lot 분리 후 절단위치 (단위 M * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8365,13 +8230,8 @@ void CGvisR2R_PunchDoc::SetStopDist(double dDist)
 		pDoc->m_pReelMap->m_dTempPauseLen = _tstof(sData);
 	::WritePrivateProfileString(_T("Last Job"), _T("Temporary Pause Length"), sData, PATH_WORKING_INFO);
 
-#ifdef USE_MPE
-	//pView->IoWrite("ML45006", long(_tstof(sVal)*1000.0));	// 일시정지 길이 (단위 M * 1000)
-	// 	pView->m_pMpe->Write(_T("ML45006"), long(_tstof(sVal)*1000.0));
-
 	long lData = (long)(dDist * 1000.0);
-	pView->m_pMpe->Write(_T("ML45006"), lData);	// 일시정지 길이 (단위 M * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgInfo.StopLength, lData);	// 일시정지 길이 (단위 M * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8390,10 +8250,8 @@ void CGvisR2R_PunchDoc::SetAOIToq(double dToq)
 	sData.Format(_T("%.3f"), dToq);
 	WorkingInfo.Motion.sAoiTq = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_TENSION_SERVO_TORQUE"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dToq * 1000.0);
-	pView->m_pMpe->Write(_T("ML45042"), lData);	// 검사부 Tension 모터 토크값 (단위 Kgf * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedTorqueCwAoi, lData);	// 검사부 Tension 모터 토크값 (단위 Kgf * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8412,10 +8270,8 @@ void CGvisR2R_PunchDoc::SetMarkingToq(double dToq)
 	sData.Format(_T("%.3f"), dToq);
 	WorkingInfo.Motion.sMkTq = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_TENSION_SERVO_TORQUE"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dToq * 1000.0);
-	pView->m_pMpe->Write(_T("ML45044"), lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedTorqueCwPunch, lData);	// 마킹부 Tension 모터 토크값 (단위 Kgf * 1000)
 
 //#ifdef USE_ENGRAVE
 //	if (pView && pView->m_pEngrave)
@@ -8436,7 +8292,7 @@ void CGvisR2R_PunchDoc::SetEngraveToq(double dToq)
 	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_TENSION_SERVO_TORQUE"), sData, sPath);
 //#ifdef USE_MPE
 //	long lData = (long)(dToq * 1000.0);
-//	pView->m_pMpe->Write(_T("ML45050"), lData);	// 각인부 Tension 모터 토크값 (단위 Kgf * 1000)
+//	pView->MpeWrite(pView->Plc.DlgMenu04.FeedTorqueEngrave, lData);	// 각인부 Tension 모터 토크값 (단위 Kgf * 1000)
 //#endif
 }
 
@@ -9370,53 +9226,31 @@ BOOL CGvisR2R_PunchDoc::GetPcrInfo(CString sPath, stModelInfo &stInfo)
 	strHeaderErrorInfo = strFileData.Left(nTemp);
 	strFileData.Delete(0, nTemp + 1);
 	nFileSize = nFileSize - nTemp - 1;
-	//m_pPcr[nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
 	// Model
 	nTemp = strFileData.Find(_T(','), 0);
 	strModel = strFileData.Left(nTemp);
 	strFileData.Delete(0, nTemp + 1);
 	nFileSize = nFileSize - nTemp - 1;
-	//Status.PcrShare[1].sModel = strModel;
 
 	// Layer
 	nTemp = strFileData.Find(_T(','), 0);
 	strLayer = strFileData.Left(nTemp);
 	strFileData.Delete(0, nTemp + 1);
 	nFileSize = nFileSize - nTemp - 1;
-	//Status.PcrShare[1].sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	//{
-		// Lot
-		nTemp = strFileData.Find(_T(','), 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		//Status.PcrShare[1].sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(_T(','), 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	//Status.PcrShare[1].sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find(_T('\n'), 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-	//}
-	//else
-	//{
-	//	// Lot
-	//	nTemp = strFileData.Find(_T(','), 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	//Status.PcrShare[1].sLot = strLot;
-
-	//	// Lot
-	//	nTemp = strFileData.Find(_T('\n'), 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	//Status.PcrShare[1].sLot = strLot;
-	//}
+	// Its Code
+	nTemp = strFileData.Find(_T('\n'), 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
 
 	nTemp = strFileData.Find(_T('\n'), 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);
@@ -9732,7 +9566,6 @@ void CGvisR2R_PunchDoc::WriteElecData(CString sData)
 		strDestPath.Format(_T("%s%s\\%s\\%s.txt"), WorkingInfo.System.sPathOldFile, WorkingInfo.CurrModel.sModel,
 			sLot, sLot);
 	nSerial = pView->m_nBufUpSerial[1];
-	//nSerial = pView->m_nBufUpSerial[0] + 1;
 
 	sPnl.Format(_T("%04d"), nSerial);
 	::WritePrivateProfileString( sLot, sPnl, sData, strDestPath );
@@ -9749,10 +9582,8 @@ void CGvisR2R_PunchDoc::SetEngraveAoiDist(double dLen)
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.sFdEngraveAoiInitDist = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("FEEDING_ENGRAVE_AOI_INIT_DIST"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45024"), lData);	// 각인부에서 AOI(상)까지 거리 (단위 mm * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedLengthFromEngraveToAoi, lData);	// 각인부에서 AOI(상)까지 거리 (단위 mm * 1000)
 }
 
 void CGvisR2R_PunchDoc::SetEngraveReaderDist(double dLen)
@@ -9761,10 +9592,8 @@ void CGvisR2R_PunchDoc::SetEngraveReaderDist(double dLen)
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.s2DEngLen = WorkingInfo.Motion.sEngraveFdBarcodeOffset = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_BARCODE_OFFSET"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45090"), lData);	// 각인위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
-#endif
+	pView->MpeWrite(_T("ML45090"), lData);	// 각인위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetEngraveReaderDist()
@@ -9778,10 +9607,8 @@ void CGvisR2R_PunchDoc::SetAoiReaderDist(double dLen)
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.sAoiFdBarcodeOffset = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("AOI_BARCODE_OFFSET"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45092"), lData);	// AOI 검사위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
-#endif
+	pView->MpeWrite(_T("ML45092"), lData);	// AOI 검사위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetAoiReaderDist()
@@ -9795,10 +9622,8 @@ void CGvisR2R_PunchDoc::SetMkReaderDist(double dLen)
 	sData.Format(_T("%.3f"), dLen);
 	WorkingInfo.Motion.sMkFdBarcodeOffset = sData;
 	::WritePrivateProfileString(_T("Motion"), _T("PUNCHING_BARCODE_OFFSET"), sData, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dLen * 1000.0);
-	pView->m_pMpe->Write(_T("ML45094"), lData);	// Punching 시작위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
-#endif
+	pView->MpeWrite(_T("ML45094"), lData);	// Punching 시작위치에서 2D 바코드 리더기까지의 Offset (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetMkReaderDist()
@@ -9807,32 +9632,32 @@ double CGvisR2R_PunchDoc::GetMkReaderDist()
 }
 
 
-void CGvisR2R_PunchDoc::SetOffsetInitPos(double dLen)
-{
-	CString sData, sPath = PATH_WORKING_INFO;
-	sData.Format(_T("%.3f"), dLen);
-	WorkingInfo.Motion.sOffsetInitPos = sData;
-	::WritePrivateProfileString(_T("Motion"), _T("INIT_POSITION_OFFSET"), sData, sPath);
-#ifdef USE_MPE
-	long lData = (long)(_tstof(WorkingInfo.Motion.sOffsetInitPos) * 1000.0);
-	pView->m_pMpe->Write(_T("ML44046"), lData);	// 각인부, 검사부, 마킹부 offset 이송 값 (단위 mm * 1000)
-#endif
-}
+//void CGvisR2R_PunchDoc::SetOffsetInitPos(double dLen)
+//{
+//	CString sData, sPath = PATH_WORKING_INFO;
+//	sData.Format(_T("%.3f"), dLen);
+//	WorkingInfo.Motion.sOffsetInitPos = sData;
+//	::WritePrivateProfileString(_T("Motion"), _T("INIT_POSITION_OFFSET"), sData, sPath);
+//#ifdef USE_MPE
+//	long lData = (long)(_tstof(WorkingInfo.Motion.sOffsetInitPos) * 1000.0);
+//	pView->MpeWrite(_T("ML44046"), lData);	// 각인부, 검사부, 마킹부 offset 이송 값 (단위 mm * 1000)
+//#endif
+//}
 
-double CGvisR2R_PunchDoc::GetOffsetInitPos()
-{
-	TCHAR szData[200];
-	CString sPath = PATH_WORKING_INFO;
-	if (0 < ::GetPrivateProfileString(_T("Motion"), _T("INIT_POSITION_OFFSET"), NULL, szData, sizeof(szData), sPath))
-		WorkingInfo.Motion.sOffsetInitPos = CString(szData);
-	else
-	{
-		//AfxMessageBox(_T("각인부, 검사부, 마킹부 offset 이송 값이 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
-		WorkingInfo.Motion.sOffsetInitPos = CString(_T("0.0"));
-	}
-
-	return (_tstof(WorkingInfo.Motion.sOffsetInitPos));
-}
+//double CGvisR2R_PunchDoc::GetOffsetInitPos()
+//{
+//	TCHAR szData[200];
+//	CString sPath = PATH_WORKING_INFO;
+//	if (0 < ::GetPrivateProfileString(_T("Motion"), _T("INIT_POSITION_OFFSET"), NULL, szData, sizeof(szData), sPath))
+//		WorkingInfo.Motion.sOffsetInitPos = CString(szData);
+//	else
+//	{
+//		//AfxMessageBox(_T("각인부, 검사부, 마킹부 offset 이송 값이 설정되어 있지 않습니다."), MB_ICONWARNING | MB_OK);
+//		WorkingInfo.Motion.sOffsetInitPos = CString(_T("0.0"));
+//	}
+//
+//	return (_tstof(WorkingInfo.Motion.sOffsetInitPos));
+//}
 
 
 void CGvisR2R_PunchDoc::Set2DReaderPosMoveVel(double dVel)
@@ -9842,10 +9667,8 @@ void CGvisR2R_PunchDoc::Set2DReaderPosMoveVel(double dVel)
 	sVal.Format(_T("%.3f"), dVel);
 	WorkingInfo.Motion.sFdBarcodeOffsetVel = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_VEL"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dVel * 1000.0);
-	pView->m_pMpe->Write(_T("ML45060"), lData);	// 2D 바코드 리더기위치까지 Feeding 속도 (단위 mm/sec * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedSpeed2dCode, lData);	// 2D 바코드 리더기위치까지 Feeding 속도 (단위 mm/sec * 1000)
 }
 
 void CGvisR2R_PunchDoc::Set2DReaderPosMoveAcc(double dAcc)
@@ -9855,10 +9678,8 @@ void CGvisR2R_PunchDoc::Set2DReaderPosMoveAcc(double dAcc)
 	sVal.Format(_T("%.3f"), dAcc);
 	WorkingInfo.Motion.sFdBarcodeOffsetAcc = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("MARKING_FEEDING_SERVO_ACC"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dAcc * 1000.0);
-	pView->m_pMpe->Write(_T("ML45062"), lData);	// 2D 바코드 리더기위치까지 Feeding 가속도 (단위 mm/sec * 1000)
-#endif
+	pView->MpeWrite(pView->Plc.DlgMenu04.FeedAcc2dCode, lData);	// 2D 바코드 리더기위치까지 Feeding 가속도 (단위 mm/sec * 1000)
 }
 
 double CGvisR2R_PunchDoc::Get2DReaderPosMoveVel()
@@ -9878,10 +9699,8 @@ void CGvisR2R_PunchDoc::SetEngraveFdPitch(double dPitch)
 	sVal.Format(_T("%.3f"), dPitch);
 	WorkingInfo.Motion.sEngraveFdLead = sVal;
 	::WritePrivateProfileString(_T("Motion"), _T("ENGRAVE_FEEDING_DRUM_LEAD_PITCH"), sVal, sPath);
-#ifdef USE_MPE
 	long lData = (long)(dPitch * 1000.0);
-	pView->m_pMpe->Write(_T("ML45026"), lData);	// 각인부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
-#endif
+	pView->MpeWrite(_T("ML45026"), lData);	// 각인부 Feeding 롤러 Lead Pitch (단위 mm * 1000)
 }
 
 double CGvisR2R_PunchDoc::GetEngraveFdPitch()
@@ -9978,13 +9797,12 @@ void CGvisR2R_PunchDoc::SetTestMode(int nMode)
 		::WritePrivateProfileString(_T("Infomation"), _T("Lot End"), _T("0"), sPath);
 		::WritePrivateProfileString(_T("Infomation"), _T("Last Shot"), _T("10000"), pDoc->WorkingInfo.System.sPathMkCurrInfo);
 
-#ifdef USE_MPE	
 		if (pView && pView->m_pMpe)
 		{
 			if (pDoc->GetTestMode() == MODE_INNER)
 			{
-				pView->m_pMpe->Write(_T("MB440172"), 1);// 내층 검사 사용/미사용 
-				pView->m_pMpe->Write(_T("MB440176"), 0);// 외층 검사 사용/미사용
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeInner, 1);// 내층 검사 사용/미사용 
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeOutter, 0);// 외층 검사 사용/미사용
 				pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), TRUE);
 				pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), FALSE);
 				if (pView->m_pDlgMenu01)
@@ -9992,8 +9810,8 @@ void CGvisR2R_PunchDoc::SetTestMode(int nMode)
 			}
 			else if (pDoc->GetTestMode() == MODE_OUTER)
 			{
-				pView->m_pMpe->Write(_T("MB440172"), 0);// 내층 검사 사용/미사용
-				pView->m_pMpe->Write(_T("MB440176"), 1);// 외층 검사 사용/미사용
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeInner, 0);// 내층 검사 사용/미사용
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeOutter, 1);// 외층 검사 사용/미사용
 				pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), FALSE);
 				pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), TRUE);
 				if (pView->m_pDlgMenu01)
@@ -10001,15 +9819,14 @@ void CGvisR2R_PunchDoc::SetTestMode(int nMode)
 			}
 			else
 			{
-				pView->m_pMpe->Write(_T("MB440172"), 0);// 내층 검사 사용/미사용
-				pView->m_pMpe->Write(_T("MB440176"), 0);// 외층 검사 사용/미사용
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeInner, 0);// 내층 검사 사용/미사용
+				pView->MpeWrite(pView->Plc.DlgInfo.ModeOutter, 0);// 외층 검사 사용/미사용
 				pDoc->SetMkInfo(_T("Signal"), _T("Inner Test On"), FALSE);
 				pDoc->SetMkInfo(_T("Signal"), _T("Outer Test On"), FALSE);
 				if (pView->m_pDlgMenu01)
 					pView->m_pDlgMenu01->EnableItsMode(FALSE);
 			}
 		}
-#endif
 	}
 	else
 	{
@@ -10584,7 +10401,6 @@ int CGvisR2R_PunchDoc::SearchFirstShotOnIts()
 
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	//Path[1] = pDoc->m_sEngModel;
 	Path[2] = pDoc->m_sItsCode;
 
 	sName.Format(_T("%s.txt"), pDoc->m_sItsCode);
@@ -10635,6 +10451,98 @@ BOOL CGvisR2R_PunchDoc::GetItsSerialInfo(int nItsSerial, BOOL &bDualTest, CStrin
 
 	Path[0] = WorkingInfo.System.sPathItsFile;
 	Path[1] = WorkingInfo.CurrModel.sModel;
+	Path[2] = m_sItsCode;
+
+	sName.Format(_T("%s.txt"), pDoc->m_sItsCode);
+	sPath.Format(_T("%s%s\\%s\\%s"), Path[0], Path[1], Path[2], sName); // ITS_Code.txt
+
+	if (sPath.IsEmpty())
+		return FALSE;
+
+	CString strTemp;
+	CFileFind finder;
+	if (finder.FindFile(sPath) == FALSE)
+	{
+		Path[1] = m_sEngModel;
+		sPath.Format(_T("%s%s\\%s\\%s"), Path[0], Path[1], Path[2], sName); // ITS_Code.txt
+		if (finder.FindFile(sPath) == FALSE)
+		{
+			strTemp.Format(_T("GetItsSerialInfo - Didn't find file.\r\n%s"), sPath);
+			pView->MsgBox(strTemp);
+			return FALSE;
+		}
+	}
+
+	if (nItsSerial == 0)
+		nItsSerial = SearchFirstShotOnIts();
+
+	CString sItsSerail;
+	sItsSerail.Format(_T("%d"), nItsSerial);
+
+	// ITS_Code.txt 파일의 정보
+	//int nTestMode;
+	//CString sProcessCode;
+
+
+	// Option 1
+	if (nOption == 0 || nOption == 1)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Dual Test"), NULL, szData, sizeof(szData), sPath))
+			bDualTest = (_ttoi(szData) > 0) ? TRUE : FALSE;
+		else
+			bDualTest = FALSE;
+
+		WorkingInfo.LastJob.bDualTestInner = bDualTest;
+	}
+
+	// Option 2
+	if (nOption == 0 || nOption == 2)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Lot"), NULL, szData, sizeof(szData), sPath))
+			sLot = CString(szData);
+		else
+			sLot = _T("");
+
+		WorkingInfo.CurrModel.sLotInner = sLot;
+	}
+
+	// Option 3
+	if (nOption == 0 || nOption == 3)
+	{
+		if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Layer Up"), NULL, szData, sizeof(szData), sPath))
+			sLayerUp = CString(szData);
+		else
+			sLayerUp = _T("");
+
+		WorkingInfo.CurrModel.sLayerUpInner = sLayerUp;
+	}
+
+	// Option 4
+	if (nOption == 0 || nOption == 4)
+	{
+		if (bDualTest)
+		{
+			if (0 < ::GetPrivateProfileString(sItsSerail, _T("Current Layer Dn"), NULL, szData, sizeof(szData), sPath))
+				sLayerDn = CString(szData);
+			else
+				sLayerDn = _T("");
+		}
+		else
+			sLayerDn = _T("");
+
+		WorkingInfo.CurrModel.sLayerDnInner = sLayerDn;
+	}
+
+	return TRUE;
+}
+
+BOOL CGvisR2R_PunchDoc::GetItsSerialInfoNext(int nItsSerial, BOOL &bDualTest, CString &sLot, CString &sLayerUp, CString &sLayerDn, int nOption)		// 내층에서의 ITS 시리얼의 정보
+{
+	TCHAR szData[512];
+	CString str, sName, sPath, Path[3];
+
+	Path[0] = WorkingInfo.System.sPathItsFile;
+	Path[1] = WorkingInfo.NextModel.sModel;
 	//Path[1] = m_sEngModel;
 	Path[2] = m_sItsCode;
 
@@ -10810,9 +10718,7 @@ CString CGvisR2R_PunchDoc::GetItsFolderPath()
 
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	//Path[1] = pDoc->m_sEngModel;
 	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-	//Path[2] = pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 	{
@@ -10856,9 +10762,7 @@ CString CGvisR2R_PunchDoc::GetItsReelmapPath()
 
 	Path[0] = pDoc->WorkingInfo.System.sPathItsFile;
 	Path[1] = pDoc->WorkingInfo.CurrModel.sModel;
-	//Path[1] = pDoc->m_sEngModel;
 	Path[2] = pDoc->WorkingInfo.LastJob.sEngItsCode;
-	//Path[2] = pDoc->m_sItsCode;
 
 	if (Path[0].IsEmpty() || Path[1].IsEmpty() || Path[2].IsEmpty())
 		return sPath;
@@ -11128,7 +11032,6 @@ int CGvisR2R_PunchDoc::LoadPCRAllDnInner(int nSerial, BOOL bFromShare)	// return
 	int nTotDef[3];
 	nTotDef[0] = m_pPcrInner[0][nIdx]->m_nTotDef;
 	nTotDef[1] = m_pPcrInner[1][nIdx]->m_nTotDef;
-	//	nTotDef[2] = nTotDef[0] + nTotDef[1];
 
 	int nTotPcs = m_MasterInner[0].m_pPcsRgn->nTotPcs;
 	stPcrMerge *pPcrMgr = new stPcrMerge[nTotPcs];
@@ -11268,20 +11171,14 @@ int CGvisR2R_PunchDoc::LoadPCRUpInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("GetInnerFolderPath가 설정되지 않았습니다."));
 		pView->MsgBox(strFileData);
-		//AfxMessageBox(strFileData);
 		return(2);
 	}
 #ifndef USE_CAM_MASTER
 	sPath = PATH_PCR;	// for Test
 #else
-	//if (bFromShare)
-	//	sPath.Format(_T("%s%04d.pcr"), sUpPath, nSerial);
-	//else
-		sPath.Format(_T("%s%04d.pcr"), sUpPath, nSerial);
+	sPath.Format(_T("%s%04d.pcr"), sUpPath, nSerial);
 #endif
 
-	//strcpy(FileD, sPath);
-	//_tcscpy(FileD, sPath);
 	StringToChar(sPath, FileD);
 
 	if ((fp = fopen(FileD, "r")) != NULL)
@@ -11291,11 +11188,9 @@ int CGvisR2R_PunchDoc::LoadPCRUpInner(int nSerial, BOOL bFromShare)	// return : 
 		fseek(fp, 0, SEEK_SET);
 
 		/* Allocate space for a path name */
-		//FileData = (char*)malloc( nFileSize );
 		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
 
 		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
-		//strFileData.Format(_T("%s"), CharToString(FileData));
 		strFileData = CharToString(FileData);
 		fclose(fp);
 		free(FileData);
@@ -11304,7 +11199,6 @@ int CGvisR2R_PunchDoc::LoadPCRUpInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("PCRInner[Up] 파일이 존재하지 않습니다.\r\n%s"), sPath);
 		pView->MsgBox(strFileData);
-		// 		AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -11344,39 +11238,21 @@ int CGvisR2R_PunchDoc::LoadPCRUpInner(int nSerial, BOOL bFromShare)	// return : 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcrInner[0][nIdx]->m_sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	//{
-		// Lot
-		nTemp = strFileData.Find(',', 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcrInner[0][nIdx]->m_sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[0][nIdx]->m_sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find('\n', 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
-	//}
-	//else
-	//{
-	//	// Lot
-	//	nTemp = strFileData.Find(',', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcrInner[0][nIdx]->m_sLot = strLot;
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
 
-	//	// Lot
-	//	nTemp = strFileData.Find('\n', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcrInner[0][nIdx]->m_sLot = strLot;
-	//}
-
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -11463,7 +11339,6 @@ int CGvisR2R_PunchDoc::LoadPCRUpInner(int nSerial, BOOL bFromShare)	// return : 
 	}
 
 	return (1); // 1(정상)
-				// 	return(m_pPcr[0][nIdx]->m_nErrPnl);
 }
 
 int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
@@ -11495,7 +11370,6 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("PCR파일이 설정되지 않았습니다."));
 		pView->MsgBox(strFileData);
-		// 		AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -11503,7 +11377,6 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("PCR[1]관련 메모리가 할당되지 않았습니다."));
 		pView->MsgBox(strFileData);
-		// 		AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -11519,21 +11392,15 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("GetInnerFolderPath가 설정되지 않았습니다."));
 		pView->MsgBox(strFileData);
-		//AfxMessageBox(strFileData);
 		return(2);
 	}
 
 #ifndef USE_CAM_MASTER
 	sPath = PATH_PCR;	// for Test
 #else
-	//if (bFromShare)
-	//	sPath.Format(_T("%s%04d.pcr"), WorkingInfo.System.sPathVrsShareDn, nSerial);
-	//else
 		sPath.Format(_T("%s%04d.pcr"), sDnPath, nSerial);
 #endif
 
-	//strcpy(FileD, sPath);
-	//_tcscpy(FileD, sPath);
 	StringToChar(sPath, FileD);
 
 	if ((fp = fopen(FileD, "r")) != NULL)
@@ -11543,11 +11410,9 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 		fseek(fp, 0, SEEK_SET);
 
 		/* Allocate space for a path name */
-		//FileData = (char*)malloc( nFileSize );
 		FileData = (char*)calloc(nFileSize + 1, sizeof(char));
 
 		nRSize = fread(FileData, sizeof(char), nFileSize, fp);
-		//strFileData.Format(_T("%s"), CharToString(FileData));
 		strFileData = CharToString(FileData);
 		fclose(fp);
 		free(FileData);
@@ -11556,7 +11421,6 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	{
 		strFileData.Format(_T("PCRInner[Dn] 파일이 존재하지 않습니다.\r\n%s"), sPath);
 		pView->MsgBox(strFileData);
-		//		AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -11594,39 +11458,21 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcrInner[1][nIdx]->m_sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	//{
-		// Lot
-		nTemp = strFileData.Find(',', 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcrInner[1][nIdx]->m_sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcrInner[1][nIdx]->m_sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find('\n', 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
-	//}
-	//else
-	//{
-	//	// Lot
-	//	nTemp = strFileData.Find(',', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcrInner[1][nIdx]->m_sLot = strLot;
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
 
-	//	// Lot
-	//	nTemp = strFileData.Find('\n', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcrInner[1][nIdx]->m_sLot = strLot;
-	//}
-
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -11713,7 +11559,6 @@ int CGvisR2R_PunchDoc::LoadPCRDnInner(int nSerial, BOOL bFromShare)	// return : 
 	}
 
 	return (1); // 1(정상)
-				//return(m_pPcr[1][nIdx]->m_nErrPnl);
 }
 
 
@@ -12301,7 +12146,6 @@ BOOL CGvisR2R_PunchDoc::InitReelmapInnerUp()
 
 		if (m_pReelMapInnerAllUp)
 		{
-			//m_pReelMapAllUp->ResetReelmap();
 			delete m_pReelMapInnerAllUp;
 			m_pReelMapInnerAllUp = NULL;
 		}
@@ -12323,7 +12167,6 @@ BOOL CGvisR2R_PunchDoc::InitReelmapInnerUp()
 
 BOOL CGvisR2R_PunchDoc::InitReelmapInnerDn()
 {
-	//GetCurrentInfoEng();
 	BOOL bDualTest = pDoc->WorkingInfo.LastJob.bDualTestInner;
 	if (!bDualTest)
 		return TRUE;
@@ -12333,7 +12176,6 @@ BOOL CGvisR2R_PunchDoc::InitReelmapInnerDn()
 		CString strMsg;
 		strMsg.Format(_T("피스 영역이 존재하지 않습니다."));
 		pView->MsgBox(strMsg);
-		//AfxMessageBox(strMsg,MB_ICONSTOP);
 		return FALSE;
 	}
 
@@ -12627,14 +12469,14 @@ int CGvisR2R_PunchDoc::GetAoiUpCamMstInfo()
 	TCHAR szData[200];
 	CString sPath;
 	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiUpVrsData,
-		pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sLot, pDoc->WorkingInfo.CurrModel.sLot);
+		pDoc->WorkingInfo.NextModel.sModel, pDoc->WorkingInfo.NextModel.sLot, pDoc->WorkingInfo.NextModel.sLot);
 		
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
-		pView->m_pMgrReelmap->m_pMasterInfo->nOutFileOnAoi = _ttoi(szData);
+		pView->m_pMgrReelmapNext->m_pMasterInfo->nOutFileOnAoi = _ttoi(szData);
 	else
-		pView->m_pMgrReelmap->m_pMasterInfo->nOutFileOnAoi = -1;
+		pView->m_pMgrReelmapNext->m_pMasterInfo->nOutFileOnAoi = -1;
 
-	return pView->m_pMgrReelmap->m_pMasterInfo->nOutFileOnAoi;
+	return pView->m_pMgrReelmapNext->m_pMasterInfo->nOutFileOnAoi;
 }
 
 int CGvisR2R_PunchDoc::GetAoiDnCamMstInfo()
@@ -12643,7 +12485,7 @@ int CGvisR2R_PunchDoc::GetAoiDnCamMstInfo()
 	CString sPath;
 	int nOutFileOnAoi;
 	sPath.Format(_T("%s%s\\%s\\%s\\DataOut.ini"), pDoc->WorkingInfo.System.sPathAoiDnVrsData,
-		pDoc->WorkingInfo.CurrModel.sModel, pDoc->WorkingInfo.CurrModel.sLayerDn, pDoc->WorkingInfo.CurrModel.sLot);
+		pDoc->WorkingInfo.NextModel.sModel, pDoc->WorkingInfo.NextModel.sLayerDn, pDoc->WorkingInfo.NextModel.sLot);
 
 	if (0 < ::GetPrivateProfileString(_T("Region"), _T("Piece Region Type"), NULL, szData, sizeof(szData), sPath))
 		nOutFileOnAoi = _ttoi(szData);
@@ -12869,11 +12711,6 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[0][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
-	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
-	{
-		int syd = 1;
-	}
-
 	// Model
 	nTemp = strFileData.Find(',', 0);
 	strModel = strFileData.Left(nTemp);
@@ -12902,6 +12739,7 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[0][nIdx]->m_sItsCode = sItsCode;
 
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -12924,7 +12762,7 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 		{
 			bUpdate = TRUE;
 			if (pView->m_pEngrave)
-				pView->m_pEngrave->SetModelUpName(strModel);
+				pView->m_pEngrave->SetModelName(strModel);
 		}
 		else
 			pView->m_bChangeModel = TRUE;
@@ -12948,7 +12786,7 @@ int CGvisR2R_PunchDoc::LoadPcrUp(CString sPath)	// return : 2(Failed), 1(정상), 
 
 		WorkingInfo.NextModel.sLot = strLot;
 		if (pView->m_pEngrave)
-			pView->m_pEngrave->SetLotUpName(strLot);
+			pView->m_pEngrave->SetLotName(strLot);
 	}
 
 	if (WorkingInfo.CurrModel.sLayerUp != strLayer)
@@ -13200,12 +13038,6 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[1][nIdx]->m_nErrPnl = _tstoi(strHeaderErrorInfo);
 
-	if (m_pPcrInner[1][nIdx]->m_nErrPnl == -1)
-	{
-		int syd = 1;
-	}
-
-
 	// Model
 	nTemp = strFileData.Find(',', 0);
 	strModel = strFileData.Left(nTemp);
@@ -13220,39 +13052,21 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 	nFileSize = nFileSize - nTemp - 1;
 	m_pPcr[1][nIdx]->m_sLayer = strLayer;
 
-	//if (WorkingInfo.System.bUseITS)
-	//{
-		// Lot
-		nTemp = strFileData.Find(',', 0);
-		strLot = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[1][nIdx]->m_sLot = strLot;
+	// Lot
+	nTemp = strFileData.Find(',', 0);
+	strLot = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sLot = strLot;
 
-		// Its Code
-		nTemp = strFileData.Find('\n', 0);
-		sItsCode = strFileData.Left(nTemp);
-		strFileData.Delete(0, nTemp + 1);
-		nFileSize = nFileSize - nTemp - 1;
-		m_pPcr[1][nIdx]->m_sItsCode = sItsCode;
-	//}
-	//else
-	//{
-	//	// Lot
-	//	nTemp = strFileData.Find(',', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[1][nIdx]->m_sLot = strLot;
+	// Its Code
+	nTemp = strFileData.Find('\n', 0);
+	sItsCode = strFileData.Left(nTemp);
+	strFileData.Delete(0, nTemp + 1);
+	nFileSize = nFileSize - nTemp - 1;
+	m_pPcr[1][nIdx]->m_sItsCode = sItsCode;
 
-	//	// Lot
-	//	nTemp = strFileData.Find('\n', 0);
-	//	strLot = strFileData.Left(nTemp);
-	//	strFileData.Delete(0, nTemp + 1);
-	//	nFileSize = nFileSize - nTemp - 1;
-	//	m_pPcr[1][nIdx]->m_sLot = strLot;
-	//}
-
+	// Total Defect Numbers
 	nTemp = strFileData.Find('\n', 0);
 	strTotalBadPieceNum = strFileData.Left(nTemp);;
 	strFileData.Delete(0, nTemp + 1);
@@ -13263,7 +13077,6 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 	{
 		pDoc->m_sEngModel = strModel;
 		pDoc->m_sEngLotNum = strLot;
-		//pDoc->m_sEngLayerUp = strLayer;
 		pDoc->m_sEngLayerDn = strLayer;
 		if (WorkingInfo.System.bUseITS)
 			pDoc->m_sItsCode = sItsCode;
@@ -13277,7 +13090,7 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 		{
 			bUpdate = TRUE;
 			if (pView->m_pEngrave)
-				pView->m_pEngrave->SetModelUpName(strModel);
+				pView->m_pEngrave->SetModelName(strModel);
 		}
 		else
 			pView->m_bChangeModel = TRUE;
@@ -13301,7 +13114,7 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 
 		WorkingInfo.NextModel.sLot = strLot;
 		if (pView->m_pEngrave)
-			pView->m_pEngrave->SetLotUpName(strLot);
+			pView->m_pEngrave->SetLotName(strLot);
 	}
 
 	if (WorkingInfo.CurrModel.sLayerDn != strLayer)
@@ -13470,7 +13283,6 @@ int CGvisR2R_PunchDoc::LoadPcrDn(CString sPath)	// return : 2(Failed), 1(정상), 
 	}
 
 	return (1); // 1(정상)
-				//return(m_pPcr[1][nIdx]->m_nErrPnl);
 }
 
 int CGvisR2R_PunchDoc::LoadPcrAllUp(CString sPath)	// return : 2(Failed), 1(정상), -1(Align Error, 노광불량), -2(Lot End)
@@ -13504,7 +13316,6 @@ int CGvisR2R_PunchDoc::LoadPcrAllUp(CString sPath)	// return : 2(Failed), 1(정상
 	{
 		str.Format(_T("PCR파일이 설정되지 않았습니다."));
 		pView->MsgBox(str);
-		//AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -13512,7 +13323,6 @@ int CGvisR2R_PunchDoc::LoadPcrAllUp(CString sPath)	// return : 2(Failed), 1(정상
 	{
 		str.Format(_T("PCR[2]관련 메모리가 할당되지 않았습니다."));
 		pView->MsgBox(str);
-		//AfxMessageBox(strFileData);
 		return(2);
 	}
 
@@ -14831,12 +14641,13 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoUp(int nSerial, stModelInfo& stInfo)
 
 	if (WorkingInfo.CurrModel.sModel != strModel)
 	{
-		if (WorkingInfo.CurrModel.sModel.IsEmpty()) // 초기화 이후 처음 Model 갱신
+		if (WorkingInfo.CurrModel.sModel.IsEmpty() && WorkingInfo.NextModel.sModel.IsEmpty()) // 초기화 이후 처음 Model 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeModel = TRUE;
-
-		WorkingInfo.NextModel.sModel = strModel;
+			WorkingInfo.NextModel.sModel = strModel;
+		}
 	}
 
 	//if (WorkingInfo.CurrModel.sItsCode != sItsCode)
@@ -14848,22 +14659,24 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoUp(int nSerial, stModelInfo& stInfo)
 
 	if (WorkingInfo.CurrModel.sLot != strLot)
 	{
-		if (WorkingInfo.CurrModel.sLot.IsEmpty()) // 초기화 이후 처음 Lot 갱신
+		if (WorkingInfo.CurrModel.sLot.IsEmpty() && WorkingInfo.NextModel.sLot.IsEmpty()) // 초기화 이후 처음 Lot 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeLot = TRUE;
-
-		WorkingInfo.NextModel.sLot = strLot;
+			WorkingInfo.NextModel.sLot = strLot;
+		}
 	}
 
 	if (WorkingInfo.CurrModel.sLayerUp != strLayer)
 	{
-		if (WorkingInfo.CurrModel.sLayerUp.IsEmpty()) // 초기화 이후 처음 Layer 갱신
+		if (WorkingInfo.CurrModel.sLayerUp.IsEmpty() && WorkingInfo.NextModel.sLayerUp.IsEmpty()) // 초기화 이후 처음 Layer 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeLayer = TRUE;
-
-		WorkingInfo.NextModel.sLayerUp = strLayer;
+			WorkingInfo.NextModel.sLayerUp = strLayer;
+		}
 	}
 
 	// Change Model now.
@@ -14998,12 +14811,13 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoDn(int nSerial, stModelInfo& stInfo)
 
 	if (WorkingInfo.CurrModel.sModel != strModel)
 	{
-		if (WorkingInfo.CurrModel.sModel.IsEmpty()) // 초기화 이후 처음 Model 갱신
+		if (WorkingInfo.CurrModel.sModel.IsEmpty() && WorkingInfo.NextModel.sModel.IsEmpty()) // 초기화 이후 처음 Model 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeModel = TRUE;
-
-		WorkingInfo.NextModel.sModel = strModel;
+			WorkingInfo.NextModel.sModel = strModel;
+		}
 	}
 
 	//if (WorkingInfo.CurrModel.sItsCode != sItsCode)
@@ -15015,22 +14829,24 @@ BOOL CGvisR2R_PunchDoc::GetAoiInfoDn(int nSerial, stModelInfo& stInfo)
 
 	if (WorkingInfo.CurrModel.sLot != strLot)
 	{
-		if (WorkingInfo.CurrModel.sLot.IsEmpty()) // 초기화 이후 처음 Lot 갱신
+		if (WorkingInfo.CurrModel.sLot.IsEmpty() && WorkingInfo.NextModel.sLot.IsEmpty()) // 초기화 이후 처음 Lot 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeLot = TRUE;
-
-		WorkingInfo.NextModel.sLot = strLot;
+			WorkingInfo.NextModel.sLot = strLot;
+		}
 	}
 
 	if (WorkingInfo.CurrModel.sLayerDn != strLayer)
 	{
-		if (WorkingInfo.CurrModel.sLayerDn.IsEmpty()) // 초기화 이후 처음 Layer 갱신
+		if (WorkingInfo.CurrModel.sLayerDn.IsEmpty() && WorkingInfo.NextModel.sLayerDn.IsEmpty()) // 초기화 이후 처음 Layer 갱신
 			bUpdate = TRUE;
 		else
+		{
 			pView->m_bChangeLayer = TRUE;
-
-		WorkingInfo.NextModel.sLayerDn = strLayer;
+			WorkingInfo.NextModel.sLayerDn = strLayer;
+		}
 	}
 
 	if (bUpdate) // 저장 경로를 설정

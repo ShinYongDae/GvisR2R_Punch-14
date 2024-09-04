@@ -95,8 +95,6 @@ void CPcsRgn::SetMkPnt(int nCam)
 			{
 				ptRef.x = pView->m_pMgrReelmap->m_stPcsMk[idx].X;
 				ptRef.y = pView->m_pMgrReelmap->m_stPcsMk[idx].Y;
-				//ptRef.x = pDoc->m_Master[0].m_stPcsMk[idx].X;
-				//ptRef.y = pDoc->m_Master[0].m_stPcsMk[idx].Y;
 
 				pMkPnt[0][idx].x = ptRef.x + m_ptPinPos[0].x;
 				pMkPnt[0][idx].y = ptRef.y + m_ptPinPos[0].y;
@@ -115,8 +113,6 @@ void CPcsRgn::SetMkPnt(int nCam)
 			{
 				ptRef.x = pView->m_pMgrReelmap->m_stPcsMk[idx].X;
 				ptRef.y = pView->m_pMgrReelmap->m_stPcsMk[idx].Y;
-				//ptRef.x = pDoc->m_Master[0].m_stPcsMk[idx].X;
-				//ptRef.y = pDoc->m_Master[0].m_stPcsMk[idx].Y;
 
 				pMkPnt[nCam][idx].x = ptRef.x + m_ptPinPos[nCam].x;
 				pMkPnt[nCam][idx].y = ptRef.y + m_ptPinPos[nCam].y;
